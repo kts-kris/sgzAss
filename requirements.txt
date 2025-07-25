@@ -1,0 +1,21 @@
+# 视觉识别和图像处理
+opencv-python==4.8.0.76
+numpy==1.24.3
+pillow==10.0.0
+
+# 屏幕操作和自动化
+pyautogui==0.9.54
+pyscreeze==0.1.29
+
+# 设备连接和控制（用于iPad连接）
+pyusb==1.2.1
+libimobiledevice==1.3.0
+pymobiledevice3
+
+# WebDriverAgent和Appium自动化
+Appium-Python-Client==3.1.0
+selenium==4.15.0
+
+# 工具和辅助库
+python-dotenv==1.0.0
+loguru==0.7.0

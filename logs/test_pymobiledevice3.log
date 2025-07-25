@@ -1,0 +1,70 @@
+2025-07-24 17:03:02.535 | INFO     | __main__:main:88 - ==================================================
+2025-07-24 17:03:02.536 | INFO     | __main__:main:89 - pymobiledevice3 USB 截图功能测试
+2025-07-24 17:03:02.536 | INFO     | __main__:main:90 - ==================================================
+2025-07-24 17:03:02.771 | INFO     | __main__:test_pymobiledevice3_screenshot:30 - 开始测试 pymobiledevice3 USB 截图功能...
+2025-07-24 17:03:02.771 | INFO     | __main__:test_pymobiledevice3_screenshot:33 - 正在连接USB设备...
+2025-07-24 17:03:02.840 | INFO     | __main__:test_pymobiledevice3_screenshot:41 - 设备信息:
+2025-07-24 17:03:02.840 | INFO     | __main__:test_pymobiledevice3_screenshot:42 -   设备名称: {}
+2025-07-24 17:03:02.840 | INFO     | __main__:test_pymobiledevice3_screenshot:43 -   iOS版本: {}
+2025-07-24 17:03:02.840 | INFO     | __main__:test_pymobiledevice3_screenshot:44 -   设备类型: {}
+2025-07-24 17:03:02.841 | INFO     | __main__:test_pymobiledevice3_screenshot:47 - 正在初始化截图服务...
+2025-07-24 17:03:02.844 | ERROR    | __main__:test_pymobiledevice3_screenshot:83 - pymobiledevice3 截图测试失败: InvalidService
+Traceback (most recent call last):
+
+  File "/Users/liuweigang/sgzAss/test_pymobiledevice3.py", line 102, in <module>
+    exit(main())
+         └ <function main at 0x122219510>
+
+  File "/Users/liuweigang/sgzAss/test_pymobiledevice3.py", line 92, in main
+    success = test_pymobiledevice3_screenshot()
+              └ <function test_pymobiledevice3_screenshot at 0x102e29b40>
+
+> File "/Users/liuweigang/sgzAss/test_pymobiledevice3.py", line 48, in test_pymobiledevice3_screenshot
+    screenshot_service = ScreenshotService(lockdown=lockdown_client)
+                         │                          └ <PlistUsbmuxLockdownClient ID:00008132-000A51622239001C VERSION:26.0 TYPE:iPad16,5 PAIRED:True>
+                         └ <class 'pymobiledevice3.services.screenshot.ScreenshotService'>
+
+  File "/Users/liuweigang/anaconda3/lib/python3.10/site-packages/pymobiledevice3/services/screenshot.py", line 10, in __init__
+    super().__init__(lockdown, self.SERVICE_NAME, is_developer_service=True)
+                     │         │    └ 'com.apple.mobile.screenshotr'
+                     │         └ <pymobiledevice3.services.screenshot.ScreenshotService object at 0x1271fffa0>
+                     └ <PlistUsbmuxLockdownClient ID:00008132-000A51622239001C VERSION:26.0 TYPE:iPad16,5 PAIRED:True>
+  File "/Users/liuweigang/anaconda3/lib/python3.10/site-packages/pymobiledevice3/services/lockdown_service.py", line 20, in __init__
+    service = start_service(service_name, include_escrow_bag=include_escrow_bag)
+              │             │                                └ False
+              │             └ 'com.apple.mobile.screenshotr'
+              └ <bound method LockdownServiceProvider.start_lockdown_developer_service of <PlistUsbmuxLockdownClient ID:00008132-000A51622239...
+  File "/Users/liuweigang/anaconda3/lib/python3.10/site-packages/pymobiledevice3/lockdown_service_provider.py", line 55, in start_lockdown_developer_service
+    return self.start_lockdown_service(name, include_escrow_bag=include_escrow_bag)
+           │    │                      │                        └ False
+           │    │                      └ 'com.apple.mobile.screenshotr'
+           │    └ <function LockdownClient.start_lockdown_service at 0x127224160>
+           └ <PlistUsbmuxLockdownClient ID:00008132-000A51622239001C VERSION:26.0 TYPE:iPad16,5 PAIRED:True>
+  File "/Users/liuweigang/anaconda3/lib/python3.10/site-packages/pymobiledevice3/lockdown.py", line 70, in _inner_reconnect_on_remote_close
+    return f(*args, **kwargs)
+           │  │       └ {'include_escrow_bag': False}
+           │  └ (<PlistUsbmuxLockdownClient ID:00008132-000A51622239001C VERSION:26.0 TYPE:iPad16,5 PAIRED:True>, 'com.apple.mobile.screensho...
+           └ <function LockdownClient.start_lockdown_service at 0x127224040>
+  File "/Users/liuweigang/anaconda3/lib/python3.10/site-packages/pymobiledevice3/lockdown.py", line 508, in start_lockdown_service
+    attr = self.get_service_connection_attributes(name, include_escrow_bag=include_escrow_bag)
+           │    │                                 │                        └ False
+           │    │                                 └ 'com.apple.mobile.screenshotr'
+           │    └ <function LockdownClient.get_service_connection_attributes at 0x12721bf40>
+           └ <PlistUsbmuxLockdownClient ID:00008132-000A51622239001C VERSION:26.0 TYPE:iPad16,5 PAIRED:True>
+  File "/Users/liuweigang/anaconda3/lib/python3.10/site-packages/pymobiledevice3/lockdown.py", line 498, in get_service_connection_attributes
+    response = self._request('StartService', options)
+               │    │                        └ {'Service': 'com.apple.mobile.screenshotr'}
+               │    └ <function LockdownClient._request at 0x127224550>
+               └ <PlistUsbmuxLockdownClient ID:00008132-000A51622239001C VERSION:26.0 TYPE:iPad16,5 PAIRED:True>
+  File "/Users/liuweigang/anaconda3/lib/python3.10/site-packages/pymobiledevice3/lockdown.py", line 588, in _request
+    raise exception_errors.get(error, LockdownError)(error, self.identifier)
+          │                │   │      │              │      │    └ '00008132-000A51622239001C'
+          │                │   │      │              │      └ <PlistUsbmuxLockdownClient ID:00008132-000A51622239001C VERSION:26.0 TYPE:iPad16,5 PAIRED:True>
+          │                │   │      │              └ 'InvalidService'
+          │                │   │      └ <class 'pymobiledevice3.exceptions.LockdownError'>
+          │                │   └ 'InvalidService'
+          │                └ <method 'get' of 'dict' objects>
+          └ {'PasswordProtected': <class 'pymobiledevice3.exceptions.PasswordRequiredError'>, 'PairingDialogResponsePending': <class 'pym...
+
+pymobiledevice3.exceptions.InvalidServiceError: InvalidService
+2025-07-24 17:03:02.849 | ERROR    | __main__:main:98 - 测试完成：失败
