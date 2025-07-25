@@ -89,22 +89,18 @@ task:
 logging:
   # 日志级别（DEBUG/INFO/WARNING/ERROR/CRITICAL）
   level: "DEBUG"
+  # 日志格式
+  format: "{time:YYYY-MM-DD HH:mm:ss} | {level} | {name}:{function}:{line} | {message}"
+  # 文件输出路径
+  file_path: "logs/ipad_automation.log"
+  # 文件大小限制
+  max_file_size: "10 MB"
+  # 备份文件数量
+  backup_count: 5
   # 控制台输出
-  console:
-    enabled: true
-    format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    color: true
-  # 文件输出
-  file:
-    enabled: true
-    path: "logs/ipad_automation.log"
-    format: "%(asctime)s - %(name)s - %(levelname)s - %(funcName)s:%(lineno)d - %(message)s"
-    # 文件大小限制
-    max_size: "10MB"
-    # 备份文件数量
-    backup_count: 5
-    # 日志轮转
-    rotation: "daily"
+  console_output: true
+  # 彩色输出
+  colored_output: true
   # 性能日志
   performance:
     enabled: true
@@ -141,8 +137,8 @@ system:
 # 全局设置（与SystemConfig类字段对应）
 debug_mode: false
 performance_monitoring: true
-auto_save_screenshots: false
-screenshot_dir: "resources"
+auto_save_screenshots: true
+screenshot_dir: "resources/screenshots"
 data_dir: "."
 temp_dir: "temp"
 

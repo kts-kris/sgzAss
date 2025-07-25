@@ -39,6 +39,7 @@ from ..models import (
     TunneldError,
     ScreenshotError
 )
+from ..utils.config import get_config
 
 
 class TunneldManager:
@@ -470,6 +471,9 @@ class ConnectionService:
                 screenshot_time = time.time() - start_time
                 logger.debug(f"截图成功，耗时: {screenshot_time:.3f}秒")
                 
+                # 检查是否需要自动保存截图
+                self._auto_save_screenshot_if_enabled(screenshot)
+                
                 return screenshot
             else:
                 raise ScreenshotError("截图数据为空")
@@ -593,6 +597,41 @@ class ConnectionService:
         except Exception as e:
             logger.error(f"处理截图数据失败: {e}")
             return None
+    
+    def _auto_save_screenshot_if_enabled(self, screenshot: np.ndarray) -> None:
+        """如果启用了自动保存，则保存截图
+        
+        Args:
+            screenshot: 截图数据，BGR格式
+        """
+        try:
+            # 获取配置
+            config = get_config()
+            
+            if config.auto_save_screenshots:
+                # 获取截图保存目录
+                from ..utils.config import get_config_manager
+                config_manager = get_config_manager()
+                screenshot_dir = config_manager.get_screenshot_dir()
+                
+                # 确保目录存在
+                screenshot_dir.mkdir(parents=True, exist_ok=True)
+                
+                # 生成文件名（使用时间戳）
+                import datetime
+                timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S_%f")[:-3]  # 精确到毫秒
+                filename = f"auto_screenshot_{timestamp}.png"
+                filepath = screenshot_dir / filename
+                
+                # 转换BGR到RGB并保存
+                screenshot_rgb = screenshot[:, :, ::-1]  # BGR to RGB
+                image = Image.fromarray(screenshot_rgb)
+                image.save(filepath)
+                
+                logger.debug(f"自动保存截图: {filename}")
+                
+        except Exception as e:
+            logger.warning(f"自动保存截图失败: {e}")
     
     def _cleanup_connection(self) -> None:
         """清理连接资源"""
