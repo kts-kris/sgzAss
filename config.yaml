@@ -19,17 +19,27 @@ vision:
   # 模板匹配阈值
   template_threshold: 0.8
   # 模板目录路径
-  template_dir: "templates"
+  template_dir: "resources/templates"
   # 是否启用VLM大模型识别
-  enable_vlm: false
-  # VLM服务提供商（openai/anthropic/google）
-  vlm_provider: "openai"
+  enable_vlm: true
+  # VLM服务提供商（openai/anthropic/google/ollama）
+  vlm_provider: "ollama"
   # VLM API配置
   vlm_config:
     api_key: ""
-    model: "gpt-4-vision-preview"
+    model: "qwen2.5vl:latest"
     max_tokens: 1000
     temperature: 0.1
+  # Ollama VLM配置
+  ollama_config:
+    host: "localhost"
+    port: 11434
+    model: "qwen2.5vl:latest"
+    timeout: 60
+    max_retries: 3
+    # 图像压缩设置
+    image_max_size: [1024, 1024]
+    image_quality: 85
   # 非极大值抑制阈值
   nms_threshold: 0.3
   # 最大检测数量
@@ -37,7 +47,7 @@ vision:
   # 截图保存配置
   screenshot:
     save_enabled: true
-    save_dir: "screenshots"
+    save_dir: "resources/screenshots"
     format: "png"
     quality: 95
 
@@ -84,6 +94,33 @@ task:
   history_limit: 100
   # 条件检查间隔（秒）
   condition_check_interval: 1.0
+
+# 异步分析配置
+async_analysis:
+  # 是否启用异步分析
+  enabled: true
+  # 最大并发分析任务数
+  max_concurrent_analyses: 3
+  # 分析历史记录限制
+  history_limit: 100
+  # 自动分析配置
+  auto_analysis:
+    enabled: false
+    interval: 5.0  # 自动分析间隔（秒）
+    priority: 0    # 自动分析任务优先级
+  # 提示词优化配置
+  prompt_optimization:
+    enabled: true
+    min_history_count: 5     # 最少历史记录数
+    optimization_interval: 50 # 优化间隔（分析次数）
+    auto_optimize: false     # 是否自动优化
+  # 结果输出配置
+  output:
+    console_enabled: true    # 控制台输出
+    file_enabled: true       # 文件输出
+    file_path: "logs/analysis_results.log"
+    max_elements_display: 5  # 最大显示元素数
+    max_suggestions_display: 3 # 最大显示建议数
 
 # 日志配置
 logging:

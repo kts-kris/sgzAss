@@ -27,6 +27,7 @@ dataclasses-json>=0.6.0         # 数据类JSON序列化
 openai>=1.0.0                   # OpenAI API客户端
 anthropics>=0.8.0               # Anthropic Claude API客户端
 google-generativeai>=0.3.0      # Google Gemini API客户端
+ollama>=0.1.7                   # Ollama客户端
 
 # 网络和HTTP
 requests>=2.31.0                # HTTP请求库

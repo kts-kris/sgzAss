@@ -50,6 +50,22 @@ def get_timestamp(format_str: str = "%Y%m%d_%H%M%S") -> str:
     return datetime.now().strftime(format_str)
 
 
+def format_timestamp(timestamp: float = None) -> str:
+    """格式化时间戳为可读字符串
+    
+    Args:
+        timestamp: Unix时间戳，如果为None则使用当前时间
+        
+    Returns:
+        str: 格式化的时间字符串
+    """
+    if timestamp is None:
+        timestamp = time.time()
+    
+    dt = datetime.fromtimestamp(timestamp)
+    return dt.strftime("%Y-%m-%d %H:%M:%S")
+
+
 def generate_filename(prefix: str = "", suffix: str = "", 
                      extension: str = "", include_timestamp: bool = True) -> str:
     """生成文件名
@@ -671,6 +687,38 @@ def safe_divide(a: float, b: float, default: float = 0.0) -> float:
         float: 除法结果
     """
     return a / b if b != 0 else default
+
+
+def save_screenshot(image: np.ndarray, filename: str = None, 
+                   directory: str = "resources/screenshots") -> str:
+    """保存截图
+    
+    Args:
+        image: 图像数组
+        filename: 文件名，如果为None则自动生成
+        directory: 保存目录
+        
+    Returns:
+        str: 保存的文件路径
+    """
+    ensure_dir(directory)
+    
+    if filename is None:
+        timestamp = get_timestamp()
+        filename = f"screenshot_{timestamp}.png"
+    
+    if not filename.endswith(('.png', '.jpg', '.jpeg')):
+        filename += '.png'
+    
+    filepath = os.path.join(directory, filename)
+    
+    try:
+        cv2.imwrite(filepath, image)
+        logger.debug(f"截图已保存: {filepath}")
+        return filepath
+    except Exception as e:
+        logger.error(f"保存截图失败: {e}")
+        raise
 
 
 def retry_on_exception(max_retries: int = 3, delay: float = 1.0, 

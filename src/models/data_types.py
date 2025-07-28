@@ -199,6 +199,8 @@ class VLMResult:
     confidence: float
     model_name: str
     processing_time: float
+    screen_type: str = "unknown"
+    error_message: Optional[str] = None
     raw_response: Dict[str, Any] = None
 
     def __post_init__(self):

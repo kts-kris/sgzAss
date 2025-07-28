@@ -31,20 +31,33 @@ class ConnectionConfig:
 
 
 @dataclass
+class OllamaConfig:
+    """Ollama VLM配置"""
+    host: str = "localhost"
+    port: int = 11434
+    model: str = "llava:latest"
+    timeout: float = 60.0
+    max_retries: int = 3
+    image_max_size: tuple = field(default_factory=lambda: (1024, 1024))
+    image_quality: int = 85
+
+
+@dataclass
 class VisionConfig:
     """视觉识别配置"""
-    template_dir: str = "templates"
+    template_dir: str = "resources/templates"
     template_threshold: float = 0.8
     nms_threshold: float = 0.3
     max_templates: int = 100
     cache_templates: bool = True
-    vlm_enabled: bool = False
-    vlm_provider: str = "openai"  # openai, anthropic, google
+    vlm_enabled: bool = True
+    vlm_provider: str = "ollama"  # openai, anthropic, google, ollama
     vlm_model: str = "gpt-4-vision-preview"
     vlm_api_key: Optional[str] = None
     vlm_base_url: Optional[str] = None
     vlm_timeout: float = 30.0
     vlm_max_retries: int = 3
+    ollama_config: OllamaConfig = field(default_factory=OllamaConfig)
 
 
 @dataclass
@@ -58,6 +71,26 @@ class AutomationConfig:
     screenshot_before_action: bool = True
     screenshot_after_action: bool = False
     max_action_history: int = 100
+
+
+@dataclass
+class AsyncAnalysisConfig:
+    """异步分析配置"""
+    enabled: bool = True
+    max_concurrent_analyses: int = 3
+    history_limit: int = 100
+    auto_analysis_enabled: bool = False
+    auto_analysis_interval: float = 5.0
+    auto_analysis_priority: int = 0
+    prompt_optimization_enabled: bool = True
+    min_history_count: int = 5
+    optimization_interval: int = 50
+    auto_optimize: bool = False
+    console_output_enabled: bool = True
+    file_output_enabled: bool = True
+    output_file_path: str = "logs/analysis_results.log"
+    max_elements_display: int = 5
+    max_suggestions_display: int = 3
 
 
 @dataclass
@@ -78,6 +111,7 @@ class SystemConfig:
     connection: ConnectionConfig = field(default_factory=ConnectionConfig)
     vision: VisionConfig = field(default_factory=VisionConfig)
     automation: AutomationConfig = field(default_factory=AutomationConfig)
+    async_analysis: AsyncAnalysisConfig = field(default_factory=AsyncAnalysisConfig)
     logging: LoggingConfig = field(default_factory=LoggingConfig)
     
     # 全局设置
@@ -87,6 +121,10 @@ class SystemConfig:
     screenshot_dir: str = "resources"
     data_dir: str = "data"
     temp_dir: str = "temp"
+    
+    def get_vlm_config(self) -> OllamaConfig:
+        """获取VLM配置"""
+        return self.vision.ollama_config
 
 
 class ConfigManager:
@@ -234,7 +272,8 @@ class ConfigManager:
                 if hasattr(obj, key):
                     current_value = getattr(obj, key)
                     if isinstance(current_value, (ConnectionConfig, VisionConfig, 
-                                                AutomationConfig, LoggingConfig)):
+                                                AutomationConfig, AsyncAnalysisConfig,
+                                                LoggingConfig, OllamaConfig)):
                         if isinstance(value, dict):
                             update_nested(current_value, value)
                         else:
@@ -298,12 +337,36 @@ class ConfigManager:
         
         # 验证VLM配置
         if self.config.vision.vlm_enabled:
-            if not self.config.vision.vlm_api_key:
-                logger.warning("VLM已启用但未设置API密钥")
-            
-            valid_providers = ['openai', 'anthropic', 'google']
+            valid_providers = ['openai', 'anthropic', 'google', 'ollama']
             if self.config.vision.vlm_provider not in valid_providers:
                 raise ConfigurationError(f"无效的VLM提供商: {self.config.vision.vlm_provider}")
+            
+            # 验证非Ollama提供商的API密钥
+            if self.config.vision.vlm_provider != 'ollama' and not self.config.vision.vlm_api_key:
+                logger.warning(f"VLM提供商 {self.config.vision.vlm_provider} 已启用但未设置API密钥")
+            
+            # 验证Ollama配置
+            if self.config.vision.vlm_provider == 'ollama':
+                ollama_config = self.config.vision.ollama_config
+                if ollama_config.port <= 0 or ollama_config.port > 65535:
+                    raise ConfigurationError(f"无效的Ollama端口: {ollama_config.port}")
+                if ollama_config.timeout <= 0:
+                    raise ConfigurationError("Ollama超时时间必须大于0")
+                if not ollama_config.model:
+                    raise ConfigurationError("Ollama模型名称不能为空")
+        
+        # 验证异步分析配置
+        if self.config.async_analysis.enabled:
+            if self.config.async_analysis.max_concurrent_analyses <= 0:
+                raise ConfigurationError("最大并发分析任务数必须大于0")
+            if self.config.async_analysis.history_limit <= 0:
+                raise ConfigurationError("分析历史记录限制必须大于0")
+            if self.config.async_analysis.auto_analysis_interval <= 0:
+                raise ConfigurationError("自动分析间隔必须大于0")
+            if self.config.async_analysis.min_history_count <= 0:
+                raise ConfigurationError("最少历史记录数必须大于0")
+            if self.config.async_analysis.optimization_interval <= 0:
+                raise ConfigurationError("优化间隔必须大于0")
     
     def get_config(self) -> SystemConfig:
         """获取系统配置

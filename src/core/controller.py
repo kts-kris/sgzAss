@@ -222,7 +222,7 @@ class iPadController:
                 return None
             
             # 分析屏幕
-            analysis_result = self.vision_service.analyze_screen(screenshot, use_vlm=use_vlm)
+            analysis_result = await self.vision_service.analyze_screen(screenshot, use_vlm=use_vlm)
             
             # 从raw_data中获取screen_type
             screen_type = analysis_result.raw_data.get('screen_type', 'unknown') if analysis_result.raw_data else 'unknown'

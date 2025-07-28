@@ -19,6 +19,7 @@ from ..models import (
     MatchResult, AnalysisResult, Element, ElementType, VisionError,
     VLMResult, VLMError
 )
+from .ollama_vlm import OllamaVLMService
 
 
 class VisionService:
@@ -77,13 +78,16 @@ class VisionService:
         
         logger.info(f"模板加载完成，共 {template_count} 个模板")
     
-    def enable_vlm(self, vlm_client: Any) -> None:
+    def enable_vlm(self, vlm_client: Any = None) -> None:
         """启用VLM大模型识别
         
         Args:
-            vlm_client: VLM客户端实例
+            vlm_client: VLM客户端实例，如果为None则使用默认的OllamaVLMService
         """
-        self.vlm_client = vlm_client
+        if vlm_client is None:
+            self.vlm_client = OllamaVLMService()
+        else:
+            self.vlm_client = vlm_client
         self.vlm_enabled = True
         logger.info("VLM大模型识别已启用")
     
@@ -141,7 +145,7 @@ class VisionService:
             logger.error(f"查找所有元素 {element_name} 时出错: {e}")
             raise VisionError(f"查找所有元素失败: {e}")
     
-    def analyze_screen(self, image: np.ndarray, use_vlm: bool = False) -> AnalysisResult:
+    async def analyze_screen(self, image: np.ndarray, use_vlm: bool = False) -> AnalysisResult:
         """分析屏幕内容，识别界面状态和可交互元素
         
         Args:
@@ -153,7 +157,7 @@ class VisionService:
         """
         try:
             if use_vlm and self.vlm_enabled:
-                return self._analyze_screen_vlm(image)
+                return await self._analyze_screen_vlm(image)
             else:
                 return self._analyze_screen_template(image)
         except Exception as e:
@@ -338,48 +342,121 @@ class VisionService:
         )
     
     def _find_element_vlm(self, image: np.ndarray, element_name: str) -> Optional[MatchResult]:
-        """使用VLM查找元素（预留接口）"""
+        """使用VLM查找元素"""
         if not self.vlm_enabled or not self.vlm_client:
             raise VLMError("VLM未启用或客户端未配置")
         
-        # TODO: 实现VLM元素查找逻辑
-        logger.warning("VLM元素查找功能尚未实现")
-        return None
+        try:
+            # 使用VLM查找元素
+            result = self.vlm_client.find_element(image, element_name)
+            if result and result.success:
+                # 转换VLMResult为MatchResult
+                return MatchResult(
+                    element_name=element_name,
+                    x=result.x,
+                    y=result.y,
+                    width=result.width,
+                    height=result.height,
+                    confidence=result.confidence,
+                    method="vlm"
+                )
+            return None
+        except Exception as e:
+            logger.error(f"VLM查找元素时出错: {e}")
+            return None
     
     def _find_all_elements_vlm(self, image: np.ndarray, element_name: str,
                               max_results: int = 10) -> List[MatchResult]:
-        """使用VLM查找所有元素（预留接口）"""
+        """使用VLM查找所有元素"""
         if not self.vlm_enabled or not self.vlm_client:
             raise VLMError("VLM未启用或客户端未配置")
         
-        # TODO: 实现VLM所有元素查找逻辑
-        logger.warning("VLM所有元素查找功能尚未实现")
-        return []
+        try:
+            # 使用VLM查找所有元素
+            results = self.vlm_client.find_all_elements(image, element_name, max_results)
+            matches = []
+            for result in results:
+                if result.success:
+                    matches.append(MatchResult(
+                        element_name=element_name,
+                        x=result.x,
+                        y=result.y,
+                        width=result.width,
+                        height=result.height,
+                        confidence=result.confidence,
+                        method="vlm"
+                    ))
+            return matches
+        except Exception as e:
+            logger.error(f"VLM查找所有元素时出错: {e}")
+            return []
     
-    def _analyze_screen_vlm(self, image: np.ndarray) -> AnalysisResult:
-        """使用VLM分析屏幕（预留接口）"""
+    async def _analyze_screen_vlm(self, image: np.ndarray) -> AnalysisResult:
+        """使用VLM分析屏幕"""
         if not self.vlm_enabled or not self.vlm_client:
             raise VLMError("VLM未启用或客户端未配置")
         
-        # TODO: 实现VLM屏幕分析逻辑
-        logger.warning("VLM屏幕分析功能尚未实现")
-        # 创建操作建议（空列表，因为VLM功能尚未实现）
-        suggestions = []
-        
-        # 将screen_type存储在raw_data中
-        raw_data = {
-            "screen_type": "unknown",
-            "method": "vlm"
-        }
-        
-        return AnalysisResult(
-            success=False,
-            confidence=0.0,
-            elements=[],
-            suggestions=suggestions,
-            analysis_time=0.0,
-            raw_data=raw_data
-        )
+        try:
+            # 使用VLM分析屏幕
+            result = await self.vlm_client.analyze_screenshot_async(image)
+            
+            if result.success:
+                # 转换VLM结果为AnalysisResult格式
+                elements = []
+                for element_data in result.elements:
+                    # element_data已经是Element对象，直接使用
+                    if isinstance(element_data, Element):
+                        # 如果已经是Element对象，直接添加
+                        elements.append(element_data)
+                    else:
+                        # 如果是字典格式，转换为Element对象
+                        elements.append(Element(
+                            name=element_data.get('name', 'unknown'),
+                            position=(element_data.get('x', 0), element_data.get('y', 0)),
+                            size=(element_data.get('width', 50), element_data.get('height', 50)),
+                            confidence=element_data.get('confidence', 0.8),
+                            element_type=ElementType.INTERACTIVE
+                        ))
+                
+                return AnalysisResult(
+                    success=True,
+                    confidence=result.confidence,
+                    elements=elements,
+                    suggestions=result.suggestions,
+                    analysis_time=0.0,  # TODO: 添加实际的分析时间计算
+                    raw_data={
+                        "screen_type": result.screen_type,
+                        "method": "vlm",
+                        "raw_response": result.raw_response
+                    }
+                )
+            else:
+                return AnalysisResult(
+                    success=False,
+                    confidence=0.0,
+                    elements=[],
+                    suggestions=[],
+                    analysis_time=0.0,
+                    raw_data={
+                        "screen_type": "unknown",
+                        "method": "vlm",
+                        "error": result.error_message
+                    }
+                )
+        except Exception as e:
+            logger.error(f"VLM屏幕分析时出错: {e}")
+            return AnalysisResult(
+                success=False,
+                confidence=0.0,
+                elements=[],
+                suggestions=[],
+                analysis_time=0.0,
+                raw_data={
+                    "screen_type": "unknown",
+                    "method": "vlm",
+                    "error": str(e)
+                }
+            )
     
     def _non_max_suppression(self, matches: List[MatchResult],
                             overlap_threshold: float = 0.3) -> List[MatchResult]:

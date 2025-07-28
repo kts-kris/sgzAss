@@ -572,3 +572,24 @@ class AutomationService:
             parameters={"duration": duration},
             description=description or f"等待 {duration} 秒"
         )
+
+
+def get_automation_backend(backend_type: str = "webdriver", **kwargs) -> AutomationBackend:
+    """获取自动化后端实例
+    
+    Args:
+        backend_type: 后端类型 ("webdriver" 或 "pymobiledevice")
+        **kwargs: 后端初始化参数
+        
+    Returns:
+        AutomationBackend: 自动化后端实例
+    """
+    if backend_type.lower() == "webdriver":
+        device_udid = kwargs.get("device_udid", "")
+        wda_port = kwargs.get("wda_port", 8100)
+        return WebDriverBackend(device_udid, wda_port)
+    elif backend_type.lower() == "pymobiledevice":
+        device_udid = kwargs.get("device_udid", "")
+        return PyMobileDeviceBackend(device_udid)
+    else:
+        raise ValueError(f"不支持的后端类型: {backend_type}")

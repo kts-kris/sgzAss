@@ -547,7 +547,8 @@ class ConnectionService:
                  result = subprocess.run(
                      cmd,
                      capture_output=True,
-                     timeout=15
+                     timeout=30,  # 增加超时时间到30秒
+                     text=True
                  )
                  
                  if result.returncode == 0 and os.path.exists(temp_path):

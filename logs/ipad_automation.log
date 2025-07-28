@@ -277,3 +277,82 @@
 2025-07-25 17:18:28 | WARNING | src.utils.config:update_nested:245 | 未知的配置项: development
 2025-07-25 17:18:28 | DEBUG | src.utils.config:_load_from_file:170 | 从文件加载配置: config.yaml
 2025-07-25 17:18:28 | INFO | src.utils.config:_load_config:148 | 配置加载完成
+2025-07-25 17:34:49 | INFO | src.utils.logger:setup_logger:77 | 日志系统初始化完成
+2025-07-25 17:34:49 | INFO | __main__:main:27 | 启动iPad自动化控制系统示例
+2025-07-25 17:34:49 | INFO | __main__:main:31 | 初始化系统...
+2025-07-25 17:34:49 | INFO | src.services.vision:_load_templates:48 | 正在从 templates 加载模板图像...
+2025-07-25 17:34:49 | INFO | src.services.vision:_load_templates:78 | 模板加载完成，共 0 个模板
+2025-07-25 17:34:49 | INFO | __main__:main:38 | 连接iPad设备...
+2025-07-25 17:34:49 | DEBUG | src.utils.logger:__enter__:370 | 开始执行: device_connection
+2025-07-25 17:34:49 | INFO | src.core.controller:connect_device:112 | 正在连接iPad设备...
+2025-07-25 17:34:49 | INFO | src.services.connection:connect:313 | 正在连接USB设备...
+2025-07-25 17:34:49 | INFO | src.services.connection:connect:325 | 检测到设备: Unknown Device (iOS Unknown, Unknown)
+2025-07-25 17:34:49 | WARNING | src.services.connection:connect:346 | 标准截图服务不可用: InvalidService
+2025-07-25 17:34:49 | INFO | src.services.connection:connect:347 | 尝试使用外部命令进行截图...
+2025-07-25 17:34:49 | INFO | src.services.connection:connect:363 | 将使用外部命令进行截图
+2025-07-25 17:34:51 | INFO | src.services.connection:connect:370 | 屏幕尺寸: 2752x2064
+2025-07-25 17:34:51 | INFO | src.services.connection:connect:410 | USB连接成功，耗时: 1.78秒
+2025-07-25 17:34:51 | INFO | src.core.controller:connect_device:123 | 设备连接成功: Unknown Device (Unknown)
+2025-07-25 17:34:51 | INFO | src.utils.logger:log_performance:242 | device_connection 执行完成
+2025-07-25 17:34:51 | DEBUG | src.utils.logger:__exit__:381 | 完成执行: device_connection (1.780s)
+2025-07-25 17:34:51 | INFO | __main__:main:43 | 设备连接成功，耗时: 1.78秒
+2025-07-25 17:34:51 | INFO | __main__:main:51 | 设备信息: Unknown Device - Unknown
+2025-07-25 17:34:51 | INFO | __main__:main:54 | 获取屏幕截图...
+2025-07-25 17:34:51 | DEBUG | src.utils.logger:__enter__:370 | 开始执行: screenshot
+2025-07-25 17:34:52 | DEBUG | src.services.connection:get_screenshot:472 | 截图成功，耗时: 1.511秒
+2025-07-25 17:34:54 | DEBUG | src.services.connection:_auto_save_screenshot_if_enabled:631 | 自动保存截图: auto_screenshot_20250725_173452_768.png
+2025-07-25 17:34:54 | INFO | src.utils.logger:log_performance:242 | screenshot 执行完成
+2025-07-25 17:34:54 | DEBUG | src.utils.logger:__exit__:381 | 完成执行: screenshot (3.423s)
+2025-07-25 17:34:54 | INFO | __main__:main:59 | 截图成功，尺寸: (2064, 2752, 3), 耗时: 3.42秒
+2025-07-25 17:34:54 | INFO | __main__:main:65 | 分析屏幕内容...
+2025-07-25 17:34:54 | DEBUG | src.utils.logger:__enter__:370 | 开始执行: screen_analysis
+2025-07-25 17:34:56 | DEBUG | src.services.connection:get_screenshot:472 | 截图成功，耗时: 1.554秒
+2025-07-25 17:34:58 | DEBUG | src.services.connection:_auto_save_screenshot_if_enabled:631 | 自动保存截图: auto_screenshot_20250725_173456_234.png
+2025-07-25 17:34:58 | DEBUG | src.core.controller:take_screenshot:200 | 截图获取成功
+2025-07-25 17:34:58 | WARNING | src.services.vision:_find_element_template:167 | 模板不存在: main_menu
+2025-07-25 17:34:58 | WARNING | src.services.vision:_find_element_template:167 | 模板不存在: world_map
+2025-07-25 17:34:58 | WARNING | src.services.vision:_find_element_template:167 | 模板不存在: battle_ui
+2025-07-25 17:34:58 | WARNING | src.services.vision:_find_element_template:167 | 模板不存在: city_view
+2025-07-25 17:34:58 | WARNING | src.services.vision:_find_all_elements_template:212 | 模板不存在: confirm_button
+2025-07-25 17:34:58 | WARNING | src.services.vision:_find_all_elements_template:212 | 模板不存在: cancel_button
+2025-07-25 17:34:58 | WARNING | src.services.vision:_find_all_elements_template:212 | 模板不存在: close_button
+2025-07-25 17:34:58 | WARNING | src.services.vision:_find_all_elements_template:212 | 模板不存在: back_button
+2025-07-25 17:34:58 | INFO | src.core.controller:analyze_screen:229 | 屏幕分析完成: unknown, 找到 0 个元素
+2025-07-25 17:34:58 | INFO | src.utils.logger:log_performance:242 | screen_analysis 执行完成
+2025-07-25 17:34:58 | DEBUG | src.utils.logger:__exit__:381 | 完成执行: screen_analysis (3.494s)
+2025-07-25 17:34:58 | INFO | __main__:main:70 | 屏幕分析完成，识别到 0 个元素，耗时: 3.49秒
+2025-07-25 17:34:58 | INFO | __main__:main:75 | 查找界面元素...
+2025-07-25 17:34:58 | INFO | __main__:main:82 | 创建自动化任务...
+2025-07-25 17:34:58 | INFO | src.core.task_manager:create_task:125 | 创建任务: 示例任务
+2025-07-25 17:34:58 | DEBUG | src.core.task_manager:add_action_step:160 | 向任务 示例任务 添加操作步骤: click_step
+2025-07-25 17:34:58 | DEBUG | src.core.task_manager:add_action_step:160 | 向任务 示例任务 添加操作步骤: wait_step
+2025-07-25 17:34:58 | DEBUG | src.core.task_manager:add_condition_step:194 | 向任务 示例任务 添加条件步骤: condition_step
+2025-07-25 17:34:58 | INFO | __main__:main:100 | 执行任务...
+2025-07-25 17:34:58 | DEBUG | src.utils.logger:__enter__:370 | 开始执行: task_execution
+2025-07-25 17:34:58 | INFO | src.core.task_manager:_execute_task_impl:283 | 开始执行任务: 示例任务
+2025-07-25 17:34:58 | INFO | src.core.task_manager:_execute_task_impl:296 | 执行步骤 1/3: click_step
+2025-07-25 17:34:58 | ERROR | src.core.controller:tap_coordinate:351 | 点击坐标失败: 自动化服务未初始化
+2025-07-25 17:34:58 | DEBUG | src.core.task_manager:_execute_action_step:377 | 步骤 click_step 第 2 次重试
+2025-07-25 17:34:59 | ERROR | src.core.controller:tap_coordinate:351 | 点击坐标失败: 自动化服务未初始化
+2025-07-25 17:34:59 | DEBUG | src.core.task_manager:_execute_action_step:377 | 步骤 click_step 第 3 次重试
+2025-07-25 17:35:00 | ERROR | src.core.controller:tap_coordinate:351 | 点击坐标失败: 自动化服务未初始化
+2025-07-25 17:35:00 | ERROR | src.core.task_manager:_execute_action_step:413 | 步骤 click_step 重试 3 次后仍然失败
+2025-07-25 17:35:00 | ERROR | src.core.task_manager:_execute_step:356 | 步骤 click_step 执行失败
+2025-07-25 17:35:00 | ERROR | src.core.task_manager:_execute_task_impl:307 | 步骤 click_step 执行失败，停止任务执行
+2025-07-25 17:35:00 | INFO | src.core.task_manager:_execute_task_impl:333 | 任务 示例任务 执行耗时: 2.00秒
+2025-07-25 17:35:00 | INFO | src.utils.logger:log_performance:242 | task_execution 执行完成
+2025-07-25 17:35:00 | DEBUG | src.utils.logger:__exit__:381 | 完成执行: task_execution (2.006s)
+2025-07-25 17:35:00 | WARNING | __main__:main:107 | 任务执行失败
+2025-07-25 17:35:00 | INFO | __main__:main:111 | 系统状态: 连接=ConnectionStatus.CONNECTED, 内存使用=0.0MB
+2025-07-25 17:35:00 | INFO | __main__:main:115 | 性能统计:
+2025-07-25 17:35:00 | INFO | __main__:main:121 |   total_operations: 0
+2025-07-25 17:35:00 | INFO | __main__:main:121 |   successful_operations: 0
+2025-07-25 17:35:00 | INFO | __main__:main:121 |   failed_operations: 0
+2025-07-25 17:35:00 | INFO | __main__:main:119 |   average_response_time: 0.00秒
+2025-07-25 17:35:00 | INFO | __main__:main:123 |   last_operation_time: None
+2025-07-25 17:35:00 | INFO | __main__:main:130 | 清理资源...
+2025-07-25 17:35:00 | INFO | src.core.controller:disconnect_device:138 | 正在断开设备连接...
+2025-07-25 17:35:00 | INFO | src.services.connection:disconnect:438 | 正在断开设备连接...
+2025-07-25 17:35:00 | INFO | src.services.connection:disconnect:449 | 设备连接已断开
+2025-07-25 17:35:00 | INFO | src.core.controller:disconnect_device:150 | 设备连接已断开
+2025-07-25 17:35:00 | INFO | __main__:main:133 | 设备连接已断开
