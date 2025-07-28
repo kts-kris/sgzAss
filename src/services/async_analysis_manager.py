@@ -125,7 +125,9 @@ class AsyncAnalysisManager:
                 host=vlm_config.host,
                 port=vlm_config.port,
                 model=vlm_config.model,
-                timeout=vlm_config.timeout
+                timeout=vlm_config.timeout,
+                image_max_size=tuple(vlm_config.image_max_size),
+                image_quality=vlm_config.image_quality
             )
             
             if not await self.vlm_service.initialize():
@@ -480,7 +482,7 @@ class AsyncAnalysisManager:
             timestamp_str = format_timestamp(task.timestamp)
             filename = f"analysis_{task.task_id}_{timestamp_str}.png"
             
-            screenshot_dir = Path(self.config.get_screenshot_dir())
+            screenshot_dir = self.config.get_screenshot_dir()
             screenshot_path = screenshot_dir / filename
             
             # 在线程池中保存截图

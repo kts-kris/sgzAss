@@ -26,6 +26,7 @@ from ..models import (
     Element, ElementType, ActionSuggestion, ActionType, AnalysisResult,
     VLMResult, VLMError, VLMProviderNotAvailableError
 )
+from ..utils.prompt_manager import get_prompt_manager
 
 
 class OllamaVLMService:
@@ -36,7 +37,9 @@ class OllamaVLMService:
                  port: int = 11434,
                  model: str = "llava:latest",
                  timeout: int = 60,
-                 max_retries: int = 3):
+                 max_retries: int = 3,
+                 image_max_size: Optional[Tuple[int, int]] = None,
+                 image_quality: int = 85):
         """
         初始化Ollama VLM服务
         
@@ -46,6 +49,8 @@ class OllamaVLMService:
             model: 使用的VLM模型名称
             timeout: 请求超时时间（秒）
             max_retries: 最大重试次数
+            image_max_size: 图像最大尺寸 (width, height)
+            image_quality: JPEG压缩质量 (1-100)
         """
         self.host = host
         self.port = port
@@ -56,12 +61,12 @@ class OllamaVLMService:
         self.is_available = False
         self.is_running = False
         
-        # 提示词模板
-        self.prompt_templates = {
-            "game_analysis": self._load_game_analysis_prompt(),
-            "ui_elements": self._load_ui_elements_prompt(),
-            "action_suggestion": self._load_action_suggestion_prompt()
-        }
+        # 图像处理配置
+        self.image_max_size = image_max_size or (1024, 1024)
+        self.image_quality = image_quality
+        
+        # 提示词管理器
+        self.prompt_manager = get_prompt_manager()
         
         # 提示词优化历史
         self.prompt_optimization_history = []
@@ -117,8 +122,16 @@ class OllamaVLMService:
             image_base64 = await self._prepare_image(image)
             
             # 选择提示词
-            prompt = custom_prompt or self.prompt_templates.get(analysis_type, 
-                                                              self.prompt_templates["game_analysis"])
+            if custom_prompt:
+                prompt = custom_prompt
+            else:
+                prompt = self.prompt_manager.get_optimized_prompt(
+                    category=analysis_type,
+                    context={
+                        "recent_failures": 0,  # 可以从历史记录中获取
+                        "avg_response_time": 0  # 可以从历史记录中获取
+                    }
+                )
             
             # 调用Ollama API
             response = await self._call_ollama_api(prompt, image_base64)
@@ -128,6 +141,15 @@ class OllamaVLMService:
             
             analysis_time = time.time() - start_time
             logger.info(f"VLM分析完成，耗时: {analysis_time:.2f}秒")
+            
+            # 更新提示词性能统计
+            success = result.get("confidence", 0) > 0.5
+            self.prompt_manager.update_prompt_performance(
+                category=analysis_type,
+                language=self.prompt_manager.config.prompt.default_language,
+                success=success,
+                response_time=analysis_time
+            )
             
             return VLMResult(
                 success=True,
@@ -194,7 +216,7 @@ class OllamaVLMService:
             
         except Exception as e:
             logger.error(f"提示词优化失败: {e}")
-            return self.prompt_templates["game_analysis"]  # 返回默认提示词
+            return self.prompt_manager.get_prompt("game_analysis")  # 返回默认提示词
     
     async def _check_ollama_service(self) -> bool:
         """检查Ollama服务是否可用"""
@@ -229,13 +251,12 @@ class OllamaVLMService:
             
             pil_image = Image.fromarray(image_rgb)
             
-            # 压缩图像以减少传输时间
-            max_size = (1024, 1024)
-            pil_image.thumbnail(max_size, Image.Resampling.LANCZOS)
+            # 使用配置的图像压缩参数
+            pil_image.thumbnail(self.image_max_size, Image.Resampling.LANCZOS)
             
             # 转换为base64
             buffer = BytesIO()
-            pil_image.save(buffer, format="JPEG", quality=85)
+            pil_image.save(buffer, format="JPEG", quality=self.image_quality)
             image_base64 = base64.b64encode(buffer.getvalue()).decode("utf-8")
             
             return image_base64
@@ -409,68 +430,14 @@ class OllamaVLMService:
             "confidence": 0.6
         }
     
-    def _load_game_analysis_prompt(self) -> str:
-        """加载游戏分析提示词"""
-        return """
-你是一个专业的三国志战略版游戏助手。请分析这张游戏截图，并提供以下信息：
-
-1. 当前游戏界面状态（主界面、世界地图、城池界面等）
-2. 可见的UI元素和按钮
-3. 推荐的下一步操作
-4. 游戏策略建议
-
-请以JSON格式返回结果：
-{
-  "description": "界面描述",
-  "current_scene": "当前场景",
-  "elements": [
-    {
-      "name": "元素名称",
-      "type": "button/icon/text",
-      "x": 坐标x,
-      "y": 坐标y,
-      "width": 宽度,
-      "height": 高度,
-      "confidence": 置信度
-    }
-  ],
-  "suggestions": [
-    {
-      "action": "tap/swipe",
-      "description": "操作描述",
-      "priority": 优先级,
-      "confidence": 置信度,
-      "parameters": {}
-    }
-  ],
-  "confidence": 总体置信度
-}
-"""
+    def get_prompt_stats(self) -> Dict[str, Any]:
+        """获取提示词使用统计"""
+        return self.prompt_manager.get_prompt_stats()
     
-    def _load_ui_elements_prompt(self) -> str:
-        """加载UI元素识别提示词"""
-        return """
-请仔细分析这张游戏截图中的所有UI元素，包括：
-- 按钮和图标
-- 文本标签
-- 输入框
-- 菜单项
-- 对话框
-
-重点关注可交互的元素，并准确标注它们的位置和类型。
-"""
-    
-    def _load_action_suggestion_prompt(self) -> str:
-        """加载操作建议提示词"""
-        return """
-基于当前游戏状态，请提供最优的操作建议：
-1. 分析当前可执行的操作
-2. 评估每个操作的优先级
-3. 考虑游戏策略和效率
-4. 提供具体的操作步骤
-
-请确保建议的操作是安全和有效的。
-"""
+    def reload_prompts(self):
+        """重新加载提示词配置"""
+        self.prompt_manager.reload_prompts()
+        logger.info("提示词配置已重新加载")
     
     def _analyze_historical_patterns(self, history: List[Dict]) -> Dict:
         """分析历史模式"""

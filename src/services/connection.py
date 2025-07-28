@@ -547,7 +547,7 @@ class ConnectionService:
                  result = subprocess.run(
                      cmd,
                      capture_output=True,
-                     timeout=30,  # 增加超时时间到30秒
+                     timeout=60,  # 增加超时时间到60秒
                      text=True
                  )
                  
@@ -557,7 +557,7 @@ class ConnectionService:
                          screenshot_data = f.read()
                      return self._process_screenshot_data(screenshot_data)
                  else:
-                     logger.error(f"外部截图命令失败: {result.stderr.decode() if result.stderr else '未知错误'}")
+                     logger.error(f"外部截图命令失败: {result.stderr if result.stderr else '未知错误'}")
                      return None
                      
              finally:

@@ -1,0 +1,15 @@
+{
+  "timestamp": 1753671306.770398,
+  "error_type": "TestError",
+  "error_message": "这是一个测试错误",
+  "context": {
+    "command": "test",
+    "user_input": "测试输入",
+    "system_state": "测试状态"
+  },
+  "traceback": "模拟的错误堆栈信息",
+  "system_info": {
+    "python_version": "3.10.13 (main, Sep 11 2023, 08:16:02) [Clang 14.0.6 ]",
+    "platform": "darwin"
+  }
+}

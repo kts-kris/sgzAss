@@ -1,0 +1,207 @@
+# 游戏助手提示词配置文件
+# 支持多语言和自定义提示词
+
+# 默认语言设置
+default_language: "zh"
+
+# 游戏分析提示词
+game_analysis:
+  zh: |
+    你是一个专业的三国志战略版游戏助手。请分析这张游戏截图，并提供以下信息：
+
+    1. 当前游戏界面状态（主界面、世界地图、城池界面等）
+    2. 可见的UI元素和按钮
+    3. 推荐的下一步操作
+    4. 游戏策略建议
+
+    请以JSON格式返回结果：
+    {
+      "description": "界面描述",
+      "current_scene": "当前场景",
+      "elements": [
+        {
+          "name": "元素名称",
+          "type": "button/icon/text",
+          "x": 坐标x,
+          "y": 坐标y,
+          "width": 宽度,
+          "height": 高度,
+          "confidence": 置信度
+        }
+      ],
+      "suggestions": [
+        {
+          "action": "tap/swipe",
+          "description": "操作描述",
+          "priority": 优先级,
+          "confidence": 置信度,
+          "parameters": {}
+        }
+      ],
+      "confidence": 总体置信度
+    }
+  
+  en: |
+    You are a professional Three Kingdoms strategy game assistant. Please analyze this game screenshot and provide the following information:
+
+    1. Current game interface status (main interface, world map, city interface, etc.)
+    2. Visible UI elements and buttons
+    3. Recommended next actions
+    4. Game strategy suggestions
+
+    Please return results in JSON format:
+    {
+      "description": "Interface description",
+      "current_scene": "Current scene",
+      "elements": [
+        {
+          "name": "Element name",
+          "type": "button/icon/text",
+          "x": x_coordinate,
+          "y": y_coordinate,
+          "width": width,
+          "height": height,
+          "confidence": confidence
+        }
+      ],
+      "suggestions": [
+        {
+          "action": "tap/swipe",
+          "description": "Action description",
+          "priority": priority,
+          "confidence": confidence,
+          "parameters": {}
+        }
+      ],
+      "confidence": overall_confidence
+    }
+
+# UI元素识别提示词
+ui_elements:
+  zh: |
+    请仔细分析这张游戏截图中的所有UI元素，包括：
+    - 按钮和图标
+    - 文本标签
+    - 输入框
+    - 菜单项
+    - 对话框
+
+    重点关注可交互的元素，并准确标注它们的位置和类型。
+    请以JSON格式返回所有识别到的UI元素。
+  
+  en: |
+    Please carefully analyze all UI elements in this game screenshot, including:
+    - Buttons and icons
+    - Text labels
+    - Input boxes
+    - Menu items
+    - Dialog boxes
+
+    Focus on interactive elements and accurately mark their positions and types.
+    Please return all identified UI elements in JSON format.
+
+# 操作建议提示词
+action_suggestion:
+  zh: |
+    基于当前游戏状态，请提供最优的操作建议：
+    1. 分析当前可执行的操作
+    2. 评估每个操作的优先级
+    3. 考虑游戏策略和效率
+    4. 提供具体的操作步骤
+
+    请确保建议的操作是安全和有效的。
+    请以JSON格式返回操作建议列表。
+  
+  en: |
+    Based on the current game state, please provide optimal action suggestions:
+    1. Analyze currently executable actions
+    2. Evaluate the priority of each action
+    3. Consider game strategy and efficiency
+    4. Provide specific action steps
+
+    Please ensure that the suggested actions are safe and effective.
+    Please return the action suggestion list in JSON format.
+
+# 高效分析提示词（优化版本）
+efficient_analysis:
+  zh: |
+    作为三国志战略版专家，请快速分析截图并返回关键信息：
+    
+    核心任务：
+    1. 识别界面类型（主城/世界地图/战斗/建筑等）
+    2. 定位主要可点击元素（按钮位置和功能）
+    3. 提供1-2个最优操作建议
+    
+    输出要求：
+    - 简洁准确，避免冗余描述
+    - 坐标精确到像素
+    - 优先级排序明确
+    
+    JSON格式：{"scene":"界面类型","elements":[{"name":"元素名","x":x,"y":y,"action":"建议操作"}],"priority_action":"最优操作"}
+  
+  en: |
+    As a Three Kingdoms strategy expert, quickly analyze the screenshot and return key information:
+    
+    Core tasks:
+    1. Identify interface type (main city/world map/battle/building etc.)
+    2. Locate main clickable elements (button positions and functions)
+    3. Provide 1-2 optimal action suggestions
+    
+    Output requirements:
+    - Concise and accurate, avoid redundant descriptions
+    - Coordinates accurate to pixels
+    - Clear priority ranking
+    
+    JSON format: {"scene":"interface_type","elements":[{"name":"element_name","x":x,"y":y,"action":"suggested_action"}],"priority_action":"optimal_action"}
+
+# 自定义提示词（用户可修改）
+custom:
+  user_defined_1:
+    zh: |
+      # 这里可以添加用户自定义的提示词
+      # 例如：特定场景的分析提示词
+    en: |
+      # Users can add custom prompts here
+      # Example: Analysis prompts for specific scenarios
+  
+  debug_mode:
+    zh: |
+      调试模式：请详细分析截图中的每个元素，包括颜色、位置、大小等详细信息。
+      输出格式：详细的文本描述，不需要JSON格式。
+    en: |
+      Debug mode: Please analyze every element in the screenshot in detail, including color, position, size and other detailed information.
+      Output format: Detailed text description, no JSON format required.
+
+# 提示词优化配置
+optimization:
+  # 是否启用提示词优化
+  enabled: true
+  
+  # 优化策略
+  strategy:
+    # 根据分析历史自动调整
+    adaptive: true
+    # 根据响应时间优化
+    performance_based: true
+    # 根据准确性优化
+    accuracy_based: true
+  
+  # 优化参数
+  parameters:
+    # 最大提示词长度
+    max_length: 1000
+    # 最小置信度阈值
+    min_confidence: 0.7
+    # 优化频率（每N次分析后优化一次）
+    optimization_frequency: 10
+
+# 模型参数配置
+model_parameters:
+  # 温度参数（控制随机性）
+  temperature: 0.1
+  # Top-p参数（控制多样性）
+  top_p: 0.9
+  # 最大输出长度
+  max_tokens: 512
+  # 停止词
+  stop_sequences: ["\n\n\n", "---"]

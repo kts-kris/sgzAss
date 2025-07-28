@@ -11,7 +11,7 @@
 import os
 import json
 import yaml
-from typing import Dict, Any, Optional, Union
+from typing import Dict, Any, Optional, Union, List
 from pathlib import Path
 from dataclasses import dataclass, field, asdict
 from loguru import logger
@@ -74,6 +74,19 @@ class AutomationConfig:
 
 
 @dataclass
+class ContinuousModeConfig:
+    """持续运行模式配置"""
+    enabled: bool = False
+    default_interval: float = 60.0  # 默认60秒间隔，避免API调用超时
+    min_interval: float = 30.0      # 最小30秒间隔，确保API调用稳定
+    max_iterations: int = 0
+    auto_execute: bool = False
+    priority_threshold: float = 0.7
+    save_results: bool = True
+    results_dir: str = "logs/continuous_results"
+
+
+@dataclass
 class AsyncAnalysisConfig:
     """异步分析配置"""
     enabled: bool = True
@@ -82,6 +95,7 @@ class AsyncAnalysisConfig:
     auto_analysis_enabled: bool = False
     auto_analysis_interval: float = 5.0
     auto_analysis_priority: int = 0
+    continuous_mode: ContinuousModeConfig = field(default_factory=ContinuousModeConfig)
     prompt_optimization_enabled: bool = True
     min_history_count: int = 5
     optimization_interval: int = 50
@@ -106,6 +120,30 @@ class LoggingConfig:
 
 
 @dataclass
+class ScreenshotConfig:
+    """截图管理配置"""
+    max_keep_count: int = 3  # 最大保留截图数量
+    auto_cleanup: bool = True  # 是否自动清理
+    cleanup_patterns: List[str] = field(default_factory=lambda: [
+        "screenshot_*.png", "analysis_*.png", "auto_screenshot_*.png"
+    ])  # 清理文件模式
+    cleanup_on_save: bool = True  # 保存时自动清理
+    keep_analysis_screenshots: bool = True  # 保留分析截图
+
+
+@dataclass
+class PromptConfig:
+    """提示词配置"""
+    config_file: str = "prompts.yaml"  # 提示词配置文件路径
+    default_language: str = "zh"  # 默认语言
+    enable_optimization: bool = True  # 是否启用提示词优化
+    cache_prompts: bool = True  # 是否缓存提示词
+    optimization_frequency: int = 10  # 优化频率
+    max_prompt_length: int = 1000  # 最大提示词长度
+    fallback_to_builtin: bool = True  # 配置文件加载失败时是否回退到内置提示词
+
+
+@dataclass
 class SystemConfig:
     """系统配置"""
     connection: ConnectionConfig = field(default_factory=ConnectionConfig)
@@ -113,11 +151,14 @@ class SystemConfig:
     automation: AutomationConfig = field(default_factory=AutomationConfig)
     async_analysis: AsyncAnalysisConfig = field(default_factory=AsyncAnalysisConfig)
     logging: LoggingConfig = field(default_factory=LoggingConfig)
+    screenshot: ScreenshotConfig = field(default_factory=ScreenshotConfig)
+    prompt: PromptConfig = field(default_factory=PromptConfig)
     
     # 全局设置
     debug_mode: bool = False
     performance_monitoring: bool = True
     auto_save_screenshots: bool = False
+    save_analysis_screenshots: bool = True  # 是否保存分析时的截图
     screenshot_dir: str = "resources"
     data_dir: str = "data"
     temp_dir: str = "temp"
@@ -273,7 +314,7 @@ class ConfigManager:
                     current_value = getattr(obj, key)
                     if isinstance(current_value, (ConnectionConfig, VisionConfig, 
                                                 AutomationConfig, AsyncAnalysisConfig,
-                                                LoggingConfig, OllamaConfig)):
+                                                LoggingConfig, OllamaConfig, ContinuousModeConfig)):
                         if isinstance(value, dict):
                             update_nested(current_value, value)
                         else:
@@ -468,6 +509,14 @@ class ConfigManager:
             Path: 临时目录路径
         """
         return Path(self.config.temp_dir).expanduser().resolve()
+    
+    def get_vlm_config(self) -> OllamaConfig:
+        """获取VLM配置
+        
+        Returns:
+            OllamaConfig: VLM配置对象
+        """
+        return self.config.get_vlm_config()
 
 
 # 全局配置管理器实例

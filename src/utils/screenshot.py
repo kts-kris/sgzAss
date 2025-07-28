@@ -9,8 +9,9 @@
 
 import time
 import asyncio
+import glob
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional, Union, List
 import numpy as np
 from PIL import Image
 from loguru import logger
@@ -139,6 +140,12 @@ class ScreenshotManager:
             )
             
             logger.debug(f"截图已保存: {filepath}")
+            
+            # 自动清理旧截图
+            config = get_config()
+            if config.screenshot.cleanup_on_save:
+                await self.cleanup_old_screenshots_async(save_dir)
+            
             return str(filepath)
             
         except Exception as e:
@@ -192,6 +199,12 @@ class ScreenshotManager:
             save_screenshot(screenshot, str(filepath))
             
             logger.debug(f"截图已保存: {filepath}")
+            
+            # 自动清理旧截图
+            config = get_config()
+            if config.screenshot.cleanup_on_save:
+                self.cleanup_old_screenshots(save_dir)
+            
             return str(filepath)
             
         except Exception as e:
@@ -207,6 +220,120 @@ class ScreenshotManager:
     def last_screenshot_time(self) -> float:
         """获取最后一次截图时间"""
         return self._last_screenshot_time
+    
+    def cleanup_old_screenshots(self, directory: Optional[Union[str, Path]] = None) -> int:
+        """清理旧截图文件
+        
+        Args:
+            directory: 清理目录，如果为None则使用配置中的目录
+            
+        Returns:
+            int: 清理的文件数量
+        """
+        try:
+            # 确定清理目录
+            if directory is None:
+                from ..utils.config import get_config_manager
+                config_manager = get_config_manager()
+                cleanup_dir = config_manager.get_screenshot_dir()
+            else:
+                cleanup_dir = Path(directory)
+            
+            if not cleanup_dir.exists():
+                logger.debug(f"截图目录不存在: {cleanup_dir}")
+                return 0
+            
+            # 获取配置
+            config = get_config()
+            screenshot_config = config.screenshot
+            
+            if not screenshot_config.auto_cleanup:
+                logger.debug("自动清理已禁用")
+                return 0
+            
+            cleaned_count = 0
+            
+            # 按模式清理文件
+            for pattern in screenshot_config.cleanup_patterns:
+                files = list(cleanup_dir.glob(pattern))
+                
+                if len(files) <= screenshot_config.max_keep_count:
+                    continue
+                
+                # 按修改时间排序，保留最新的文件
+                files.sort(key=lambda f: f.stat().st_mtime, reverse=True)
+                files_to_delete = files[screenshot_config.max_keep_count:]
+                
+                for file_path in files_to_delete:
+                    try:
+                        file_path.unlink()
+                        cleaned_count += 1
+                        logger.debug(f"已删除旧截图: {file_path.name}")
+                    except Exception as e:
+                        logger.warning(f"删除文件失败 {file_path}: {e}")
+            
+            if cleaned_count > 0:
+                logger.info(f"清理完成，删除了 {cleaned_count} 个旧截图文件")
+            
+            return cleaned_count
+            
+        except Exception as e:
+            logger.error(f"清理截图失败: {e}")
+            return 0
+    
+    async def cleanup_old_screenshots_async(self, directory: Optional[Union[str, Path]] = None) -> int:
+        """异步清理旧截图文件
+        
+        Args:
+            directory: 清理目录，如果为None则使用配置中的目录
+            
+        Returns:
+            int: 清理的文件数量
+        """
+        loop = asyncio.get_event_loop()
+        return await loop.run_in_executor(None, self.cleanup_old_screenshots, directory)
+    
+    def get_screenshot_files(self, directory: Optional[Union[str, Path]] = None) -> List[Path]:
+        """获取截图文件列表
+        
+        Args:
+            directory: 查找目录，如果为None则使用配置中的目录
+            
+        Returns:
+            List[Path]: 截图文件路径列表
+        """
+        try:
+            # 确定查找目录
+            if directory is None:
+                from ..utils.config import get_config_manager
+                config_manager = get_config_manager()
+                search_dir = config_manager.get_screenshot_dir()
+            else:
+                search_dir = Path(directory)
+            
+            if not search_dir.exists():
+                return []
+            
+            # 获取配置
+            config = get_config()
+            screenshot_config = config.screenshot
+            
+            all_files = []
+            
+            # 按模式查找文件
+            for pattern in screenshot_config.cleanup_patterns:
+                files = list(search_dir.glob(pattern))
+                all_files.extend(files)
+            
+            # 去重并按修改时间排序
+            unique_files = list(set(all_files))
+            unique_files.sort(key=lambda f: f.stat().st_mtime, reverse=True)
+            
+            return unique_files
+            
+        except Exception as e:
+            logger.error(f"获取截图文件列表失败: {e}")
+            return []
 
 
 # 便捷函数

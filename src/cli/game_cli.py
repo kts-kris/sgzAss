@@ -63,45 +63,72 @@ class GameCLI:
         
         print("\n🎮 《三国志战略版》游戏助手 v3.0")
         print("=" * 50)
-        print("可用命令:")
-        print("  analyze    - 分析当前屏幕")
-        print("  suggest    - 获取操作建议")
-        print("  find <元素> - 查找游戏元素")
-        print("  stats      - 显示统计信息")
-        print("  optimize   - 优化提示词")
-        print("  help       - 显示帮助")
-        print("  quit       - 退出程序")
+        print("可用命令 (输入数字或命令名):")
+        print("  1. analyze    - 分析当前屏幕")
+        print("  2. suggest    - 获取操作建议")
+        print("  3. find       - 查找游戏元素")
+        print("  4. stats      - 显示统计信息")
+        print("  5. optimize   - 优化提示词")
+        print("  6. continuous - 启动持续运行模式")
+        print("  7. config     - 显示配置信息")
+        print("  8. help       - 显示帮助")
+        print("  9. quit       - 退出程序")
         print("=" * 50)
         
         while True:
             try:
-                command = input("\n🎯 请输入命令: ").strip().lower()
+                command = input("\n🎯 请输入命令 (数字或名称): ").strip().lower()
                 
-                if command == "quit" or command == "exit":
+                # 处理数字命令
+                if command in ["9", "quit", "exit"]:
                     break
-                elif command == "analyze":
+                elif command in ["1", "analyze"]:
                     await self._handle_analyze()
-                elif command == "suggest":
+                elif command in ["2", "suggest"]:
                     await self._handle_suggest()
-                elif command.startswith("find "):
-                    element_name = command[5:].strip()
+                elif command in ["3", "find"] or command.startswith("find "):
+                    if command == "3" or command == "find":
+                        element_name = input("请输入要查找的元素名称: ").strip()
+                    else:
+                        element_name = command[5:].strip()
                     await self._handle_find(element_name)
-                elif command == "stats":
+                elif command in ["4", "stats"]:
                     await self._handle_stats()
-                elif command == "optimize":
+                elif command in ["5", "optimize"]:
                     await self._handle_optimize()
-                elif command == "help":
+                elif command in ["6", "continuous"]:
+                    await self._handle_continuous_mode()
+                elif command in ["7", "config"]:
+                    self._handle_config()
+                elif command in ["8", "help"]:
                     self._show_help()
                 else:
                     print(f"❌ 未知命令: {command}")
-                    print("💡 输入 'help' 查看可用命令")
+                    print("💡 输入 '8' 或 'help' 查看可用命令")
                     
             except KeyboardInterrupt:
                 print("\n\n👋 用户中断，正在退出...")
                 break
             except Exception as e:
-                logger.error(f"处理命令时出错: {e}")
+                # 详细错误日志记录
+                import traceback
+                error_details = {
+                    'command': command,
+                    'error_type': type(e).__name__,
+                    'error_message': str(e),
+                    'traceback': traceback.format_exc()
+                }
+                
+                logger.error(f"命令执行失败 - 命令: {command}")
+                logger.error(f"错误类型: {error_details['error_type']}")
+                logger.error(f"错误信息: {error_details['error_message']}")
+                logger.error(f"完整堆栈:\n{error_details['traceback']}")
+                
+                # 保存详细错误到专门的错误日志文件
+                self._log_detailed_error(error_details)
+                
                 print(f"❌ 命令执行失败: {e}")
+                print("💡 详细错误信息已记录到日志文件")
         
         # 停止助手
         if self.assistant:
@@ -148,7 +175,14 @@ class GameCLI:
             for i, suggestion in enumerate(suggestions):
                 print(f"\n{i+1}. {suggestion.description}")
                 print(f"   类型: {suggestion.action_type}")
-                print(f"   位置: ({suggestion.x}, {suggestion.y})")
+                
+                # 获取位置信息
+                if suggestion.target:
+                    x, y = suggestion.target.center
+                    print(f"   位置: ({x}, {y})")
+                else:
+                    print(f"   位置: 未指定")
+                
                 print(f"   优先级: {suggestion.priority}")
                 print(f"   置信度: {suggestion.confidence:.2f}")
                 
@@ -220,41 +254,212 @@ class GameCLI:
         else:
             print("❌ 提示词优化失败")
     
+    async def _handle_continuous_mode(self):
+        """处理持续运行模式"""
+        print("\n🔄 持续运行模式配置")
+        print("=" * 30)
+        
+        # 获取配置参数
+        try:
+            interval = input("请输入分析间隔时间（秒，默认60秒）: ").strip()
+            interval = float(interval) if interval else 60.0
+            
+            if interval < 30.0:
+                print("⚠️ 间隔时间不能小于30秒（避免API超时），已设置为30秒")
+                interval = 30.0
+            
+            max_iterations = input("请输入最大运行次数（0表示无限制，默认0）: ").strip()
+            max_iterations = int(max_iterations) if max_iterations else 0
+            
+            auto_execute = input("是否自动执行高优先级建议？(y/n，默认n): ").strip().lower()
+            auto_execute = auto_execute in ['y', 'yes', '是']
+            
+        except ValueError as e:
+            logger.error(f"参数输入错误: {e}")
+            print("❌ 参数输入错误，使用默认配置")
+            interval = 5.0
+            max_iterations = 0
+            auto_execute = False
+        
+        print(f"\n🚀 启动持续运行模式")
+        print(f"   分析间隔: {interval}秒")
+        print(f"   最大次数: {'无限制' if max_iterations == 0 else max_iterations}")
+        print(f"   自动执行: {'是' if auto_execute else '否'}")
+        print("   按 Ctrl+C 停止运行")
+        print("=" * 30)
+        
+        iteration_count = 0
+        
+        try:
+            while True:
+                iteration_count += 1
+                
+                print(f"\n🔍 第 {iteration_count} 次分析 ({time.strftime('%H:%M:%S')})")
+                
+                # 执行分析
+                start_time = time.time()
+                result = await self.assistant.analyze_current_screen()
+                analysis_time = time.time() - start_time
+                
+                if result and result.success:
+                    print(f"✅ 分析完成 (耗时: {analysis_time:.2f}秒, 置信度: {result.confidence:.2f})")
+                    print(f"🎯 发现元素: {len(result.elements)}个, 操作建议: {len(result.suggestions)}个")
+                    
+                    # 显示所有操作建议
+                    if result.suggestions:
+                        print(f"\n💡 操作建议详情:")
+                        print("-" * 50)
+                        for i, suggestion in enumerate(result.suggestions):
+                            priority_icon = "⚡" if suggestion.priority >= 0.7 else "💡"
+                            print(f"{priority_icon} {i+1}. {suggestion.description}")
+                            print(f"   类型: {suggestion.action_type}")
+                            
+                            # 获取位置信息
+                            if suggestion.target:
+                                x, y = suggestion.target.center
+                                print(f"   位置: ({x}, {y})")
+                            else:
+                                print(f"   位置: 未指定")
+                            
+                            print(f"   优先级: {suggestion.priority:.2f}")
+                            print(f"   置信度: {suggestion.confidence:.2f}")
+                            print()
+                        
+                        # 处理高优先级建议
+                        high_priority_suggestions = [s for s in result.suggestions if s.priority >= 0.7]
+                        if high_priority_suggestions:
+                            print(f"⚡ 检测到 {len(high_priority_suggestions)} 个高优先级建议")
+                            
+                            for i, suggestion in enumerate(high_priority_suggestions):
+                                if auto_execute:
+                                    print(f"🚀 自动执行建议 {i+1}: {suggestion.description}")
+                                    success = await self.assistant.execute_suggestion(suggestion)
+                                    if success:
+                                        print(f"✅ 执行成功")
+                                    else:
+                                        print(f"❌ 执行失败")
+                                else:
+                                    print(f"💭 建议 {i+1}: {suggestion.description} (优先级: {suggestion.priority:.2f})")
+                    else:
+                        print("\n💭 本次分析未发现可执行的操作建议")
+                else:
+                    print(f"❌ 分析失败 (耗时: {analysis_time:.2f}秒)")
+                
+                # 检查是否达到最大次数
+                if max_iterations > 0 and iteration_count >= max_iterations:
+                    print(f"\n🏁 已完成 {max_iterations} 次分析，退出持续运行模式")
+                    break
+                
+                # 等待下次分析
+                print(f"⏱️ 等待 {interval} 秒后进行下次分析...")
+                await asyncio.sleep(interval)
+                
+        except KeyboardInterrupt:
+            print(f"\n\n⏹️ 用户中断，持续运行模式已停止")
+            print(f"📊 总共完成 {iteration_count} 次分析")
+        except Exception as e:
+            logger.error(f"持续运行模式异常: {e}")
+            print(f"❌ 持续运行模式异常: {e}")
+            print(f"📊 已完成 {iteration_count} 次分析")
+    
+    def _log_detailed_error(self, error_details: dict):
+        """记录详细错误信息到专门的错误日志文件"""
+        try:
+            from pathlib import Path
+            import json
+            
+            # 确保错误日志目录存在
+            error_log_dir = Path("logs/errors")
+            error_log_dir.mkdir(parents=True, exist_ok=True)
+            
+            # 生成错误日志文件名
+            timestamp = time.strftime('%Y%m%d_%H%M%S')
+            error_file = error_log_dir / f"cli_error_{timestamp}.json"
+            
+            # 添加时间戳和额外信息
+            error_details.update({
+                'timestamp': time.strftime('%Y-%m-%d %H:%M:%S'),
+                'component': 'GameCLI',
+                'version': '3.0'
+            })
+            
+            # 保存到JSON文件
+            with open(error_file, 'w', encoding='utf-8') as f:
+                json.dump(error_details, f, ensure_ascii=False, indent=2)
+            
+            logger.info(f"详细错误信息已保存到: {error_file}")
+            
+        except Exception as save_error:
+            logger.error(f"保存错误日志失败: {save_error}")
+    
     def _show_help(self):
         """显示帮助信息"""
         print("\n📖 命令帮助:")
-        print("  analyze           - 分析当前游戏屏幕，识别元素和生成建议")
-        print("  suggest           - 获取当前屏幕的操作建议")
-        print("  find <元素名称>    - 查找指定的游戏元素")
-        print("  stats             - 显示分析统计信息和服务状态")
-        print("  optimize          - 手动触发提示词优化")
-        print("  help              - 显示此帮助信息")
-        print("  quit/exit         - 退出程序")
+        print("  1. analyze           - 分析当前游戏屏幕，识别元素和生成建议")
+        print("  2. suggest           - 获取当前屏幕的操作建议")
+        print("  3. find              - 查找指定的游戏元素")
+        print("  4. stats             - 显示分析统计信息和服务状态")
+        print("  5. optimize          - 手动触发提示词优化")
+        print("  6. continuous        - 启动持续运行模式（定期分析）")
+        print("  7. config            - 显示当前配置信息")
+        print("  8. help              - 显示此帮助信息")
+        print("  9. quit/exit         - 退出程序")
         print("\n💡 提示:")
+        print("  - 可以输入数字快速选择命令")
         print("  - 确保iPad已连接并启动《三国志战略版》")
         print("  - 高优先级建议会询问是否自动执行")
+        print("  - 持续运行模式支持自动分析和执行")
         print("  - 使用Ctrl+C可以随时中断操作")
-    
-    def _handle_help(self):
-        """处理help命令"""
-        self._show_help()
     
     def _handle_config(self):
         """处理config命令"""
-        print("\n⚙️ 当前配置:")
+        print("\n⚙️ 当前配置信息:")
+        print("=" * 40)
+        
+        # 基本配置
+        print("📱 设备连接:")
+        print(f"  连接模式: {self.config.connection.connection_mode}")
+        print(f"  连接超时: {self.config.connection.timeout}秒")
+        print(f"  重试次数: {self.config.connection.retry_count}")
+        
+        # 视觉识别配置
+        print("\n👁️ 视觉识别:")
+        print(f"  VLM启用: {'是' if self.config.vision.enable_vlm else '否'}")
+        print(f"  VLM提供商: {self.config.vision.vlm_provider}")
         print(f"  Ollama模型: {self.config.vision.ollama_config.model}")
+        print(f"  Ollama地址: {self.config.vision.ollama_config.host}:{self.config.vision.ollama_config.port}")
+        print(f"  模板阈值: {self.config.vision.template_threshold}")
+        
+        # 自动化配置
+        print("\n🤖 自动化:")
+        print(f"  默认后端: {self.config.automation.default_backend}")
+        print(f"  操作延迟: {self.config.automation.actions.delay}秒")
+        print(f"  点击持续时间: {self.config.automation.actions.click_duration}秒")
+        
+        # 异步分析配置
+        print("\n⚡ 异步分析:")
         print(f"  异步分析: {'启用' if self.config.async_analysis.enabled else '禁用'}")
-        print(f"  自动化后端: {self.config.automation.default_backend}")
-    
-    def _handle_stats(self):
-        """处理stats命令"""
-        if self.assistant:
-            stats = self.assistant.get_analysis_statistics()
-            print("\n📊 统计信息:")
-            print(f"  总分析次数: {stats.get('total_analyses', 0)}")
-            print(f"  运行状态: {'🟢 运行中' if stats.get('is_running', False) else '🔴 已停止'}")
-        else:
-            print("\n❌ 游戏助手未初始化")
+        print(f"  最大并发: {self.config.async_analysis.max_concurrent_analyses}")
+        print(f"  自动分析: {'启用' if self.config.async_analysis.auto_analysis.enabled else '禁用'}")
+        if self.config.async_analysis.auto_analysis.enabled:
+            print(f"  分析间隔: {self.config.async_analysis.auto_analysis.interval}秒")
+        
+        # 日志配置
+        print("\n📝 日志:")
+        print(f"  日志级别: {self.config.logging.level}")
+        print(f"  文件输出: {'是' if self.config.logging.file_path else '否'}")
+        if self.config.logging.file_path:
+            print(f"  日志文件: {self.config.logging.file_path}")
+        print(f"  控制台输出: {'是' if self.config.logging.console_output else '否'}")
+        
+        # 系统配置
+        print("\n🔧 系统:")
+        print(f"  调试模式: {'是' if self.config.debug_mode else '否'}")
+        print(f"  性能监控: {'是' if self.config.performance_monitoring else '否'}")
+        print(f"  自动保存截图: {'是' if self.config.auto_save_screenshots else '否'}")
+        print(f"  截图目录: {self.config.screenshot_dir}")
+        
+        print("=" * 40)
 
 
 async def main():

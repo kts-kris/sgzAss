@@ -37,9 +37,9 @@ vision:
     model: "qwen2.5vl:latest"
     timeout: 60
     max_retries: 3
-    # 图像压缩设置
-    image_max_size: [1024, 1024]
-    image_quality: 85
+    # 图像压缩设置 - 优化后的配置，平衡性能和质量
+    image_max_size: [800, 600]  # 从1024x1024降低到800x600，提升性能
+    image_quality: 75            # 从85降低到75，减少文件大小
   # 非极大值抑制阈值
   nms_threshold: 0.3
   # 最大检测数量
@@ -108,6 +108,16 @@ async_analysis:
     enabled: false
     interval: 5.0  # 自动分析间隔（秒）
     priority: 0    # 自动分析任务优先级
+  # 持续运行模式配置
+  continuous_mode:
+    enabled: false           # 是否启用持续运行模式
+    default_interval: 60.0   # 默认分析间隔（秒）- 避免API调用超时
+    min_interval: 30.0       # 最小分析间隔（秒）- 确保API调用稳定
+    max_iterations: 0        # 默认最大运行次数（0表示无限制）
+    auto_execute: false      # 是否自动执行高优先级建议
+    priority_threshold: 0.7  # 高优先级建议阈值
+    save_results: true       # 是否保存分析结果
+    results_dir: "logs/continuous_results"  # 结果保存目录
   # 提示词优化配置
   prompt_optimization:
     enabled: true
@@ -174,10 +184,12 @@ system:
 # 全局设置（与SystemConfig类字段对应）
 debug_mode: false
 performance_monitoring: true
-auto_save_screenshots: true
+auto_save_screenshots: false  # 禁用自动保存，避免重复截图
 screenshot_dir: "resources/screenshots"
 data_dir: "."
 temp_dir: "temp"
+# 分析截图保存设置
+save_analysis_screenshots: true  # 是否保存分析时的截图
 
 # 安全配置
 security:

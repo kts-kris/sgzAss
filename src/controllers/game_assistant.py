@@ -20,7 +20,7 @@ from ..services.vision import VisionService
 from ..services.automation import AutomationBackend
 from ..services.ollama_vlm import OllamaVLMService
 from ..services.async_analysis_manager import AsyncAnalysisManager
-from ..utils.config import get_config
+from ..utils.config import get_config, get_config_manager
 from ..utils.screenshot import ScreenshotManager
 
 
@@ -34,6 +34,7 @@ class GameAssistant:
             automation_backend: 自动化后端实例
         """
         self.config = get_config()
+        self.config_manager = get_config_manager()
         self.automation_backend = automation_backend
         
         # 初始化服务
@@ -65,7 +66,9 @@ class GameAssistant:
                     host=ollama_config.host,
                     port=ollama_config.port,
                     model=ollama_config.model,
-                    timeout=ollama_config.timeout
+                    timeout=ollama_config.timeout,
+                    image_max_size=ollama_config.image_max_size,
+                    image_quality=ollama_config.image_quality
                 )
                 self.vision_service.enable_vlm(self.ollama_service)
                 logger.info(f"Ollama VLM服务已启用，模型: {ollama_config.model}")
@@ -75,7 +78,7 @@ class GameAssistant:
                 from ..services.connection import ConnectionService
                 connection_service = ConnectionService()
                 self.async_manager = AsyncAnalysisManager(
-                    config_manager=self.config,
+                    config_manager=self.config_manager,
                     connection_service=connection_service
                 )
                 logger.info("异步分析管理器已启用")
@@ -128,8 +131,15 @@ class GameAssistant:
                 from src.services.ollama_vlm import OllamaVLMService
                 from src.utils.config import get_config
                 config = get_config()
-                model_name = config.vision.ollama_config.model
-                self.ollama_vlm = OllamaVLMService(model=model_name)
+                ollama_config = config.vision.ollama_config
+                self.ollama_vlm = OllamaVLMService(
+                    host=ollama_config.host,
+                    port=ollama_config.port,
+                    model=ollama_config.model,
+                    timeout=ollama_config.timeout,
+                    image_max_size=ollama_config.image_max_size,
+                    image_quality=ollama_config.image_quality
+                )
                 await self.ollama_vlm.start()
                 logger.info("默认Ollama VLM服务已启动")
             
@@ -200,17 +210,23 @@ class GameAssistant:
                 logger.error("获取截图失败")
                 return None
             
-            # 保存截图（如果需要）
-            if save_screenshot:
+            # 保存分析截图（如果启用且未启用自动保存）
+            if save_screenshot and self.config.save_analysis_screenshots and not self.config.auto_save_screenshots:
+                # 使用 ScreenshotManager 的保存功能，避免重复保存
                 timestamp = int(time.time())
-                # 使用配置管理器获取截图目录
-                from ..utils.config import get_config_manager
-                config_manager = get_config_manager()
-                screenshot_dir = config_manager.get_screenshot_dir()
-                screenshot_path = screenshot_dir / f"game_screen_{timestamp}.png"
-                screenshot_path.parent.mkdir(parents=True, exist_ok=True)
-                cv2.imwrite(str(screenshot_path), screenshot)
-                logger.debug(f"截图已保存: {screenshot_path}")
+                filename = f"analysis_screenshot_{timestamp}.png"
+                saved_path = await self.screenshot_manager.save_screenshot_async(
+                    screenshot=screenshot,
+                    filename=filename
+                )
+                if saved_path:
+                    logger.debug(f"分析截图已保存: {saved_path}")
+                else:
+                    logger.warning("分析截图保存失败")
+            elif save_screenshot and self.config.auto_save_screenshots:
+                logger.debug("截图已通过自动保存功能保存，跳过重复保存")
+            elif save_screenshot and not self.config.save_analysis_screenshots:
+                logger.debug("分析截图保存已禁用，跳过保存")
             
             # 使用VLM分析屏幕
             if self.config.vision.vlm_enabled:
@@ -310,21 +326,28 @@ class GameAssistant:
             logger.error("自动化后端未初始化")
             return False
         
+        if not suggestion.target:
+            logger.error("操作建议缺少目标元素")
+            return False
+        
         try:
+            # 获取目标位置
+            x, y = suggestion.target.center
+            
             # 根据建议类型执行操作
             if suggestion.action_type == "click":
-                await self.automation_backend.click(suggestion.x, suggestion.y)
+                await self.automation_backend.click(x, y)
             elif suggestion.action_type == "swipe":
                 # 假设建议中包含滑动的终点坐标
-                end_x = suggestion.params.get("end_x", suggestion.x + 100)
-                end_y = suggestion.params.get("end_y", suggestion.y)
+                end_x = suggestion.parameters.get("end_x", x + 100)
+                end_y = suggestion.parameters.get("end_y", y)
                 await self.automation_backend.swipe(
-                    suggestion.x, suggestion.y, end_x, end_y
+                    x, y, end_x, end_y
                 )
             elif suggestion.action_type == "long_press":
-                duration = suggestion.params.get("duration", 1.0)
+                duration = suggestion.parameters.get("duration", 1.0)
                 await self.automation_backend.long_press(
-                    suggestion.x, suggestion.y, duration
+                    x, y, duration
                 )
             else:
                 logger.warning(f"不支持的操作类型: {suggestion.action_type}")

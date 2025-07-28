@@ -356,3 +356,60 @@
 2025-07-25 17:35:00 | INFO | src.services.connection:disconnect:449 | 设备连接已断开
 2025-07-25 17:35:00 | INFO | src.core.controller:disconnect_device:150 | 设备连接已断开
 2025-07-25 17:35:00 | INFO | __main__:main:133 | 设备连接已断开
+2025-07-28 11:17:33 | INFO | src.utils.logger:setup_logger:77 | 日志系统初始化完成
+2025-07-28 11:17:33 | ERROR | __main__:main:105 | Screenshot stability test error: 'ConnectionConfig' object has no attribute 'timeout'
+2025-07-28 11:18:01 | INFO | src.utils.logger:setup_logger:77 | 日志系统初始化完成
+2025-07-28 11:18:28 | INFO | src.utils.logger:setup_logger:77 | 日志系统初始化完成
+2025-07-28 11:18:29 | INFO | src.services.connection:connect:313 | 正在连接USB设备...
+2025-07-28 11:18:29 | INFO | src.services.connection:connect:325 | 检测到设备: Unknown Device (iOS Unknown, Unknown)
+2025-07-28 11:18:29 | WARNING | src.services.connection:connect:346 | 标准截图服务不可用: InvalidService
+2025-07-28 11:18:29 | INFO | src.services.connection:connect:347 | 尝试使用外部命令进行截图...
+2025-07-28 11:18:29 | INFO | src.services.connection:connect:363 | 将使用外部命令进行截图
+2025-07-28 11:18:30 | INFO | src.services.connection:connect:370 | 屏幕尺寸: 2752x2064
+2025-07-28 11:18:30 | INFO | src.services.connection:connect:410 | USB连接成功，耗时: 1.52秒
+2025-07-28 11:18:31 | DEBUG | src.services.connection:get_screenshot:472 | 截图成功，耗时: 1.163秒
+2025-07-28 11:18:33 | DEBUG | src.services.connection:get_screenshot:472 | 截图成功，耗时: 1.183秒
+2025-07-28 11:18:36 | DEBUG | src.services.connection:get_screenshot:472 | 截图成功，耗时: 1.665秒
+2025-07-28 11:18:45 | DEBUG | src.services.connection:get_screenshot:472 | 截图成功，耗时: 8.114秒
+2025-07-28 11:18:47 | DEBUG | src.services.connection:get_screenshot:472 | 截图成功，耗时: 1.191秒
+2025-07-28 11:18:50 | DEBUG | src.services.connection:get_screenshot:472 | 截图成功，耗时: 1.160秒
+2025-07-28 11:18:52 | DEBUG | src.services.connection:get_screenshot:472 | 截图成功，耗时: 1.188秒
+2025-07-28 11:18:54 | DEBUG | src.services.connection:get_screenshot:472 | 截图成功，耗时: 1.162秒
+2025-07-28 11:18:56 | DEBUG | src.services.connection:get_screenshot:472 | 截图成功，耗时: 1.223秒
+2025-07-28 11:18:58 | DEBUG | src.services.connection:get_screenshot:472 | 截图成功，耗时: 1.178秒
+2025-07-28 11:19:15 | INFO | src.utils.logger:setup_logger:77 | 日志系统初始化完成
+2025-07-28 11:19:15 | INFO | src.services.connection:connect:313 | 正在连接USB设备...
+2025-07-28 11:19:15 | INFO | src.services.connection:connect:325 | 检测到设备: Unknown Device (iOS Unknown, Unknown)
+2025-07-28 11:19:15 | WARNING | src.services.connection:connect:346 | 标准截图服务不可用: InvalidService
+2025-07-28 11:19:15 | INFO | src.services.connection:connect:347 | 尝试使用外部命令进行截图...
+2025-07-28 11:19:15 | INFO | src.services.connection:connect:363 | 将使用外部命令进行截图
+2025-07-28 11:19:16 | INFO | src.services.connection:connect:370 | 屏幕尺寸: 2752x2064
+2025-07-28 11:19:16 | INFO | src.services.connection:connect:410 | USB连接成功，耗时: 1.52秒
+2025-07-28 11:19:17 | DEBUG | src.services.connection:get_screenshot:472 | 截图成功，耗时: 1.229秒
+2025-07-28 11:19:20 | DEBUG | src.services.connection:get_screenshot:472 | 截图成功，耗时: 1.278秒
+2025-07-28 11:19:22 | DEBUG | src.services.connection:get_screenshot:472 | 截图成功，耗时: 1.217秒
+2025-07-28 11:19:24 | DEBUG | src.services.connection:get_screenshot:472 | 截图成功，耗时: 1.284秒
+2025-07-28 11:19:26 | DEBUG | src.services.connection:get_screenshot:472 | 截图成功，耗时: 1.400秒
+2025-07-28 11:19:29 | DEBUG | src.services.connection:get_screenshot:472 | 截图成功，耗时: 1.286秒
+2025-07-28 11:19:31 | DEBUG | src.services.connection:get_screenshot:472 | 截图成功，耗时: 1.487秒
+2025-07-28 11:19:34 | DEBUG | src.services.connection:get_screenshot:472 | 截图成功，耗时: 1.478秒
+2025-07-28 11:19:36 | DEBUG | src.services.connection:get_screenshot:472 | 截图成功，耗时: 1.505秒
+2025-07-28 11:19:39 | DEBUG | src.services.connection:get_screenshot:472 | 截图成功，耗时: 1.495秒
+2025-07-28 11:20:05 | INFO | src.utils.logger:setup_logger:77 | 日志系统初始化完成
+2025-07-28 11:20:05 | INFO | src.services.connection:connect:313 | 正在连接USB设备...
+2025-07-28 11:20:05 | INFO | src.services.connection:connect:325 | 检测到设备: Unknown Device (iOS Unknown, Unknown)
+2025-07-28 11:20:05 | WARNING | src.services.connection:connect:346 | 标准截图服务不可用: InvalidService
+2025-07-28 11:20:05 | INFO | src.services.connection:connect:347 | 尝试使用外部命令进行截图...
+2025-07-28 11:20:05 | INFO | src.services.connection:connect:363 | 将使用外部命令进行截图
+2025-07-28 11:20:07 | INFO | src.services.connection:connect:370 | 屏幕尺寸: 2752x2064
+2025-07-28 11:20:07 | INFO | src.services.connection:connect:410 | USB连接成功，耗时: 1.87秒
+2025-07-28 11:20:09 | DEBUG | src.services.connection:get_screenshot:472 | 截图成功，耗时: 1.486秒
+2025-07-28 11:20:11 | DEBUG | src.services.connection:get_screenshot:472 | 截图成功，耗时: 1.523秒
+2025-07-28 11:20:14 | DEBUG | src.services.connection:get_screenshot:472 | 截图成功，耗时: 1.473秒
+2025-07-28 11:20:16 | DEBUG | src.services.connection:get_screenshot:472 | 截图成功，耗时: 1.488秒
+2025-07-28 11:20:19 | DEBUG | src.services.connection:get_screenshot:472 | 截图成功，耗时: 1.471秒
+2025-07-28 11:20:21 | DEBUG | src.services.connection:get_screenshot:472 | 截图成功，耗时: 1.523秒
+2025-07-28 11:20:24 | DEBUG | src.services.connection:get_screenshot:472 | 截图成功，耗时: 1.502秒
+2025-07-28 11:20:26 | DEBUG | src.services.connection:get_screenshot:472 | 截图成功，耗时: 1.438秒
+2025-07-28 11:20:28 | DEBUG | src.services.connection:get_screenshot:472 | 截图成功，耗时: 1.457秒
+2025-07-28 11:20:31 | DEBUG | src.services.connection:get_screenshot:472 | 截图成功，耗时: 1.432秒
