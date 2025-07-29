@@ -44,105 +44,10 @@ class PromptManager:
         self._load_prompts()
     
     def _get_builtin_prompts(self) -> Dict[str, Dict[str, str]]:
-        """获取内置提示词（作为备用）"""
-        return {
-            "game_analysis": {
-                "zh": """
-你是一个专业的三国志战略版游戏助手。请分析这张游戏截图，并提供以下信息：
-
-1. 当前游戏界面状态（主界面、世界地图、城池界面等）
-2. 可见的UI元素和按钮
-3. 推荐的下一步操作
-4. 游戏策略建议
-
-请以JSON格式返回结果。
-                """,
-                "en": """
-You are a professional Three Kingdoms strategy game assistant. Please analyze this game screenshot and provide the following information:
-
-1. Current game interface status
-2. Visible UI elements and buttons
-3. Recommended next actions
-4. Game strategy suggestions
-
-Please return results in JSON format.
-                """
-            },
-            "ui_elements": {
-                "zh": """
-请仔细分析这张游戏截图中的所有UI元素，包括按钮、图标、文本标签等。
-重点关注可交互的元素，并准确标注它们的位置和类型。
-请以JSON格式返回所有识别到的UI元素。
-                """,
-                "en": """
-Please carefully analyze all UI elements in this game screenshot, including buttons, icons, text labels, etc.
-Focus on interactive elements and accurately mark their positions and types.
-Please return all identified UI elements in JSON format.
-                """
-            },
-            "action_suggestion": {
-                "zh": """
-基于当前游戏状态，请提供最优的操作建议。
-分析当前可执行的操作，评估优先级，并提供具体的操作步骤。
-请以JSON格式返回操作建议列表。
-                """,
-                "en": """
-Based on the current game state, please provide optimal action suggestions.
-Analyze currently executable actions, evaluate priorities, and provide specific action steps.
-Please return the action suggestion list in JSON format.
-                """
-            },
-            "efficient_analysis": {
-                "zh": """
-作为三国志战略版专家，请快速分析截图并返回关键信息：
-1. 识别界面类型
-2. 定位主要可点击元素
-3. 提供1-2个最优操作建议
-
-输出要求：简洁准确，坐标精确，优先级明确。
-JSON格式：{"scene":"界面类型","elements":[{"name":"元素名","x":x,"y":y}],"priority_action":"最优操作"}
-                """,
-                "en": """
-As a Three Kingdoms strategy expert, quickly analyze the screenshot and return key information:
-1. Identify interface type
-2. Locate main clickable elements
-3. Provide 1-2 optimal action suggestions
-
-Output requirements: Concise and accurate, precise coordinates, clear priorities.
-JSON format: {"scene":"interface_type","elements":[{"name":"element_name","x":x,"y":y}],"priority_action":"optimal_action"}
-                """
-            },
-            "screen_analysis": {
-                "zh": """
-你是一个专业的三国志战略版游戏助手。请分析这张游戏截图，并提供以下信息：
-
-1. 当前游戏界面状态（主界面、世界地图、城池界面等）
-2. 可见的UI元素和按钮
-3. 推荐的下一步操作
-4. 游戏策略建议
-
-请以JSON格式返回结果，包含：
-- current_scene: 当前场景类型
-- description: 详细描述
-- elements: 可交互元素列表
-- suggestions: 操作建议列表
-                """,
-                "en": """
-You are a professional Three Kingdoms strategy game assistant. Please analyze this game screenshot and provide the following information:
-
-1. Current game interface status (main interface, world map, city interface, etc.)
-2. Visible UI elements and buttons
-3. Recommended next actions
-4. Game strategy suggestions
-
-Please return results in JSON format, including:
-- current_scene: Current scene type
-- description: Detailed description
-- elements: List of interactive elements
-- suggestions: List of action suggestions
-                """
-            }
-        }
+        """获取内置提示词（作为备用）- 从配置文件读取"""
+        # 不再硬编码提示词，而是从配置文件读取
+        # 如果配置文件不存在或读取失败，返回空字典
+        return {}
     
     def _load_prompts(self):
         """加载提示词配置"""
@@ -308,7 +213,7 @@ Please return results in JSON format, including:
                         return final_fallback["zh"]
                 except Exception:
                     pass
-                return "请分析这张游戏截图。"  # 最终硬编码兜底
+                return self._get_fallback_text("fallback", language)  # 从配置文件读取兜底
     
     def get_optimized_prompt(self, category: str, language: Optional[str] = None,
                            context: Optional[Dict[str, Any]] = None) -> str:
@@ -333,9 +238,12 @@ Please return results in JSON format, including:
                 return detailed_prefix[language]
             elif "zh" in detailed_prefix:
                 return detailed_prefix["zh"]
+            elif "en" in detailed_prefix:
+                return detailed_prefix["en"]
         except Exception:
             pass
-        return "请详细分析并"  # 兜底
+        # 从配置文件读取兜底值
+        return self._get_fallback_text("detailed_prefix", language)
     
     def _get_analysis_prefix(self, language: Optional[str] = None) -> str:
         """获取分析前缀"""
@@ -345,9 +253,30 @@ Please return results in JSON format, including:
                 return analysis_prefix[language]
             elif "zh" in analysis_prefix:
                 return analysis_prefix["zh"]
+            elif "en" in analysis_prefix:
+                return analysis_prefix["en"]
         except Exception:
             pass
-        return "请详细"  # 兜底
+        # 从配置文件读取兜底值
+        return self._get_fallback_text("analysis_prefix", language)
+    
+    def _get_fallback_text(self, text_type: str, language: Optional[str] = None) -> str:
+        """从配置文件获取兜底文本"""
+        try:
+            fallback_prompts = self._prompts.get("default_prompts", {}).get("fallback", {})
+            if language and language in fallback_prompts:
+                return fallback_prompts[language]
+            elif "zh" in fallback_prompts:
+                return fallback_prompts["zh"]
+            elif "en" in fallback_prompts:
+                return fallback_prompts["en"]
+        except Exception:
+            pass
+        
+        # 最后的兜底，但这应该很少被使用
+        if language == "en":
+            return "Please analyze"
+        return "请分析"
     
     def _optimize_prompt_with_context(self, prompt: str, context: Dict[str, Any], language: Optional[str] = None) -> str:
         """根据上下文优化提示词"""
@@ -365,10 +294,11 @@ Please return results in JSON format, including:
                 else:
                     cleaned_prompt = prompt
                 # 确保前缀和内容之间有适当的连接
-                if cleaned_prompt and not cleaned_prompt.startswith("分析") and not cleaned_prompt.startswith("analyze"):
+                analysis_text = self._get_fallback_text("analysis_prefix", language)
+                if cleaned_prompt and not cleaned_prompt.startswith(analysis_text):
                     prompt = detailed_prefix + cleaned_prompt
                 else:
-                    prompt = detailed_prefix + "分析" + cleaned_prompt if language == "zh" else detailed_prefix + "analyze" + cleaned_prompt
+                    prompt = detailed_prefix + analysis_text + cleaned_prompt
         
         elif context.get('avg_response_time', 0) > 5.0:
             # 如果响应时间较长，使用更简洁的提示词

@@ -170,7 +170,7 @@ class GameAssistant:
             
             # 如果启用了自动分析，开始自动分析循环
             if (self.config.async_analysis.enabled and 
-                self.config.async_analysis.auto_analysis_enabled):
+                self.config.async_analysis.auto_analysis.enabled):
                 asyncio.create_task(self._auto_analysis_loop())
             
             logger.info("✅ 游戏助手启动完成，等待用户操作")
@@ -423,7 +423,7 @@ class GameAssistant:
         
         while self.is_running:
             try:
-                if self.config.async_analysis.auto_analysis_enabled:
+                if self.config.async_analysis.auto_analysis.enabled:
                     # 提交自动分析任务
                     if self.screenshot_manager and self.async_manager:
                         screenshot = await self.screenshot_manager.take_screenshot()
@@ -435,7 +435,7 @@ class GameAssistant:
                             )
                 
                 # 等待下次分析
-                await asyncio.sleep(self.config.async_analysis.auto_analysis_interval)
+                await asyncio.sleep(self.config.async_analysis.auto_analysis.interval)
                 
             except Exception as e:
                 logger.error(f"自动分析循环出错: {e}")

@@ -159,19 +159,7 @@ efficient_analysis:
 screen_analysis:
   zh: |
     你是一个专业的三国志战略版游戏助手。请分析这张游戏截图，并提供以下信息：
-
-    1. 当前游戏界面状态（主界面、世界地图、城池界面等）
-    2. 可见的UI元素和按钮
-    3. 推荐的下一步操作
-    4. 游戏策略建议
-
-    请以JSON格式返回结果，包含：
-    - current_scene: 当前场景类型
-    - description: 详细描述
-    - elements: 可交互元素列表
-    - suggestions: 操作建议列表
-    - todo: 下一步操作建议
-    - confidence: 分析置信度
+    请你根据当前游戏截图上的各种数据分析，用户正在做什么，游戏目的是什么，用一句话完整描述。
   
   en: |
     You are a professional Three Kingdoms strategy game assistant. Please analyze this game screenshot and provide the following information:

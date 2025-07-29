@@ -22,6 +22,9 @@ from ..models import ConfigurationError
 @dataclass
 class ConnectionConfig:
     """连接配置"""
+    connection_mode: str = "usb"  # usb, wifi, auto
+    timeout: float = 30.0  # 连接超时时间
+    retry_count: int = 3  # 重试次数
     usb_timeout: float = 30.0
     screenshot_timeout: float = 10.0
     tunneld_port_range: tuple = field(default_factory=lambda: (49152, 65535))
@@ -50,6 +53,7 @@ class VisionConfig:
     nms_threshold: float = 0.3
     max_templates: int = 100
     cache_templates: bool = True
+    enable_vlm: bool = True  # 修改为 enable_vlm 以匹配 CLI 代码
     vlm_enabled: bool = True
     vlm_provider: str = "ollama"  # openai, anthropic, google, ollama
     vlm_model: str = "gpt-4-vision-preview"
@@ -70,6 +74,15 @@ class VisionConfig:
 
 
 @dataclass
+class ActionConfig:
+    """操作配置"""
+    delay: float = 0.5
+    click_duration: float = 0.1
+    swipe_duration: float = 1.0
+    long_press_duration: float = 2.0
+
+
+@dataclass
 class AutomationConfig:
     """自动化配置"""
     default_backend: str = "webdriver"  # webdriver, pymobiledevice
@@ -80,6 +93,7 @@ class AutomationConfig:
     screenshot_before_action: bool = True
     screenshot_after_action: bool = False
     max_action_history: int = 100
+    actions: ActionConfig = field(default_factory=ActionConfig)
 
 
 @dataclass
@@ -96,14 +110,20 @@ class ContinuousModeConfig:
 
 
 @dataclass
+class AutoAnalysisConfig:
+    """自动分析配置"""
+    enabled: bool = False
+    interval: float = 5.0
+    priority: int = 0
+
+
+@dataclass
 class AsyncAnalysisConfig:
     """异步分析配置"""
     enabled: bool = True
     max_concurrent_analyses: int = 3
     history_limit: int = 100
-    auto_analysis_enabled: bool = False
-    auto_analysis_interval: float = 5.0
-    auto_analysis_priority: int = 0
+    auto_analysis: AutoAnalysisConfig = field(default_factory=AutoAnalysisConfig)
     continuous_mode: ContinuousModeConfig = field(default_factory=ContinuousModeConfig)
     prompt_optimization_enabled: bool = True
     min_history_count: int = 5
@@ -266,6 +286,7 @@ class ConfigManager:
         """从环境变量加载配置"""
         env_mappings = {
             # 连接配置
+            'IPAD_CONNECTION_MODE': ('connection.connection_mode', str),
             'IPAD_USB_TIMEOUT': ('connection.usb_timeout', float),
             'IPAD_SCREENSHOT_TIMEOUT': ('connection.screenshot_timeout', float),
             'IPAD_DEVICE_UDID': ('connection.device_udid', str),
@@ -335,7 +356,7 @@ class ConfigManager:
                     if isinstance(current_value, (ConnectionConfig, VisionConfig, 
                                                 AutomationConfig, AsyncAnalysisConfig,
                                                 LoggingConfig, OllamaConfig, ContinuousModeConfig,
-                                                ScreenshotConfig, PromptConfig)):
+                                                ScreenshotConfig, PromptConfig, ActionConfig, AutoAnalysisConfig)):
                         if isinstance(value, dict):
                             update_nested(current_value, value, current_path)
                         else:
@@ -375,6 +396,10 @@ class ConfigManager:
     def _validate_config(self):
         """验证配置"""
         # 验证连接配置
+        valid_connection_modes = ['usb', 'wifi', 'auto']
+        if self.config.connection.connection_mode not in valid_connection_modes:
+            raise ConfigurationError(f"无效的连接模式: {self.config.connection.connection_mode}")
+        
         if self.config.connection.usb_timeout <= 0:
             raise ConfigurationError("USB超时时间必须大于0")
         
@@ -428,7 +453,7 @@ class ConfigManager:
                 raise ConfigurationError("最大并发分析任务数必须大于0")
             if self.config.async_analysis.history_limit <= 0:
                 raise ConfigurationError("分析历史记录限制必须大于0")
-            if self.config.async_analysis.auto_analysis_interval <= 0:
+            if self.config.async_analysis.auto_analysis.interval <= 0:
                 raise ConfigurationError("自动分析间隔必须大于0")
             if self.config.async_analysis.min_history_count <= 0:
                 raise ConfigurationError("最少历史记录数必须大于0")
