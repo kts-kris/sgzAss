@@ -185,9 +185,9 @@ system:
   # 工作目录
   work_dir: "."
   # 临时文件目录
-  temp_dir: "temp"
+  temp_dir: "./temp"
   # 缓存目录
-  cache_dir: "cache"
+  cache_dir: "./cache"
   # 最大内存使用（MB）
   max_memory: 1024
   # 清理临时文件
@@ -249,8 +249,8 @@ development:
   # 性能分析
   profiling:
     enabled: false
-    output_dir: "profiling"
+    output_dir: "./profiling"
   # 测试配置
   testing:
     mock_device: false
-    test_data_dir: "tests/data"
+    test_data_dir: "./test_data"
