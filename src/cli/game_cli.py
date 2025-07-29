@@ -21,6 +21,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from src.controllers.game_assistant import GameAssistant
 from src.services.automation import get_automation_backend
 from src.utils.config import get_config
+from src.utils.config_manager import get_config_manager
+from src.utils.logger import set_log_level, set_console_log_level, set_file_log_level
 from src.models import ConfigurationError
 
 
@@ -29,7 +31,8 @@ class GameCLI:
     
     def __init__(self):
         """初始化CLI"""
-        self.config = get_config()
+        self.config_manager = get_config_manager()
+        self.config = get_config()  # 保持向后兼容
         self.assistant: Optional[GameAssistant] = None
         self.automation_backend = None
     
@@ -80,7 +83,7 @@ class GameCLI:
                 command = input("\n🎯 请输入命令 (数字或名称): ").strip().lower()
                 
                 # 处理数字命令
-                if command in ["9", "quit", "exit"]:
+                if command in ["0", "quit", "exit"]:
                     break
                 elif command in ["1", "analyze"]:
                     await self._handle_analyze()
@@ -88,7 +91,11 @@ class GameCLI:
                     await self._handle_suggest()
                 elif command in ["3", "find"] or command.startswith("find "):
                     if command == "3" or command == "find":
-                        element_name = input("请输入要查找的元素名称: ").strip()
+                        try:
+                            element_name = input("请输入要查找的元素名称: ").strip()
+                        except EOFError:
+                            print("\n❌ 输入流已关闭，跳过查找操作")
+                            continue
                     else:
                         element_name = command[5:].strip()
                     await self._handle_find(element_name)
@@ -100,12 +107,18 @@ class GameCLI:
                     await self._handle_continuous_mode()
                 elif command in ["7", "config"]:
                     self._handle_config()
-                elif command in ["8", "help"]:
+                elif command in ["8", "loglevel"]:
+                    self._handle_log_level()
+                elif command in ["9", "help"]:
                     self._show_help()
                 else:
                     print(f"❌ 未知命令: {command}")
-                    print("💡 输入 '8' 或 'help' 查看可用命令")
+                    print("💡 输入 '9' 或 'help' 查看可用命令")
                     
+            except EOFError:
+                print("\n\n📡 检测到输入流结束，程序将优雅退出...")
+                logger.info("程序因输入流结束而退出")
+                break
             except KeyboardInterrupt:
                 print("\n\n👋 用户中断，正在退出...")
                 break
@@ -310,36 +323,69 @@ class GameCLI:
                         print(f"\n💡 操作建议详情:")
                         print("-" * 50)
                         for i, suggestion in enumerate(result.suggestions):
-                            priority_icon = "⚡" if suggestion.priority >= 0.7 else "💡"
-                            print(f"{priority_icon} {i+1}. {suggestion.description}")
-                            print(f"   类型: {suggestion.action_type}")
+                            # 安全地获取建议属性，支持字典和对象两种格式
+                            if hasattr(suggestion, 'priority'):
+                                priority = suggestion.priority
+                                description = suggestion.description
+                                action_type = suggestion.action_type
+                                target = suggestion.target
+                                confidence = suggestion.confidence
+                            else:
+                                # 处理字典格式的建议
+                                priority = suggestion.get('priority', 0.0)
+                                description = suggestion.get('description', '无描述')
+                                action_type = suggestion.get('action_type', '未知动作')
+                                target = suggestion.get('target')
+                                confidence = suggestion.get('confidence', 0.0)
+                            
+                            priority_icon = "⚡" if priority >= 0.7 else "💡"
+                            print(f"{priority_icon} {i+1}. {description}")
+                            print(f"   类型: {action_type}")
                             
                             # 获取位置信息
-                            if suggestion.target:
-                                x, y = suggestion.target.center
+                            if target:
+                                if hasattr(target, 'center'):
+                                    x, y = target.center
+                                elif isinstance(target, dict) and 'center' in target:
+                                    x, y = target['center']
+                                else:
+                                    x, y = 0, 0
                                 print(f"   位置: ({x}, {y})")
                             else:
                                 print(f"   位置: 未指定")
                             
-                            print(f"   优先级: {suggestion.priority:.2f}")
-                            print(f"   置信度: {suggestion.confidence:.2f}")
+                            print(f"   优先级: {priority:.2f}")
+                            print(f"   置信度: {confidence:.2f}")
                             print()
                         
                         # 处理高优先级建议
-                        high_priority_suggestions = [s for s in result.suggestions if s.priority >= 0.7]
+                        high_priority_suggestions = []
+                        for s in result.suggestions:
+                            priority = s.priority if hasattr(s, 'priority') else s.get('priority', 0.0)
+                            if priority >= 0.7:
+                                high_priority_suggestions.append(s)
+                        
                         if high_priority_suggestions:
                             print(f"⚡ 检测到 {len(high_priority_suggestions)} 个高优先级建议")
                             
                             for i, suggestion in enumerate(high_priority_suggestions):
+                                # 安全地获取建议属性
+                                if hasattr(suggestion, 'description'):
+                                    description = suggestion.description
+                                    priority = suggestion.priority
+                                else:
+                                    description = suggestion.get('description', '无描述')
+                                    priority = suggestion.get('priority', 0.0)
+                                
                                 if auto_execute:
-                                    print(f"🚀 自动执行建议 {i+1}: {suggestion.description}")
+                                    print(f"🚀 自动执行建议 {i+1}: {description}")
                                     success = await self.assistant.execute_suggestion(suggestion)
                                     if success:
                                         print(f"✅ 执行成功")
                                     else:
                                         print(f"❌ 执行失败")
                                 else:
-                                    print(f"💭 建议 {i+1}: {suggestion.description} (优先级: {suggestion.priority:.2f})")
+                                    print(f"💭 建议 {i+1}: {description} (优先级: {priority:.2f})")
                     else:
                         print("\n💭 本次分析未发现可执行的操作建议")
                 else:
@@ -402,8 +448,9 @@ class GameCLI:
         print("  5. optimize          - 手动触发提示词优化")
         print("  6. continuous        - 启动持续运行模式（定期分析）")
         print("  7. config            - 显示当前配置信息")
-        print("  8. help              - 显示此帮助信息")
-        print("  9. quit/exit         - 退出程序")
+        print("  8. loglevel          - 设置日志输出等级")
+        print("  9. help              - 显示此帮助信息")
+        print("  0. quit/exit         - 退出程序")
         print("\n💡 提示:")
         print("  - 可以输入数字快速选择命令")
         print("  - 确保iPad已连接并启动《三国志战略版》")
@@ -446,7 +493,9 @@ class GameCLI:
         
         # 日志配置
         print("\n📝 日志:")
-        print(f"  日志级别: {self.config.logging.level}")
+        print(f"  文件日志级别: {self.config.logging.level}")
+        console_level = getattr(self.config.logging, 'console_level', self.config.logging.level)
+        print(f"  控制台日志级别: {console_level}")
         print(f"  文件输出: {'是' if self.config.logging.file_path else '否'}")
         if self.config.logging.file_path:
             print(f"  日志文件: {self.config.logging.file_path}")
@@ -460,6 +509,93 @@ class GameCLI:
         print(f"  截图目录: {self.config.screenshot_dir}")
         
         print("=" * 40)
+    
+    def _handle_log_level(self):
+        """处理日志等级设置命令"""
+        print("\n📝 日志等级控制")
+        print("="*30)
+        
+        # 显示当前日志等级
+        current_file_level = getattr(self.config.logging, 'level', 'DEBUG')
+        current_console_level = getattr(self.config.logging, 'console_level', current_file_level)
+        
+        print(f"当前文件日志等级: {current_file_level}")
+        print(f"当前控制台日志等级: {current_console_level}")
+        print("\n可用的日志等级:")
+        print("  1. DEBUG    - 调试信息（最详细）")
+        print("  2. INFO     - 一般信息")
+        print("  3. WARNING  - 警告信息")
+        print("  4. ERROR    - 错误信息")
+        print("  5. CRITICAL - 严重错误（最少）")
+        
+        print("\n设置选项:")
+        print("  1. 设置控制台日志等级")
+        print("  2. 设置文件日志等级")
+        print("  3. 同时设置控制台和文件日志等级")
+        print("  0. 返回主菜单")
+        
+        try:
+            choice = input("\n请选择操作 (0-3): ").strip()
+            
+            if choice == "0":
+                return
+            
+            level_map = {
+                "1": "DEBUG",
+                "2": "INFO", 
+                "3": "WARNING",
+                "4": "ERROR",
+                "5": "CRITICAL"
+            }
+            
+            if choice == "1":
+                # 设置控制台日志等级
+                print("\n设置控制台日志等级:")
+                level_choice = input("请选择等级 (1-5): ").strip()
+                if level_choice in level_map:
+                    level = level_map[level_choice]
+                    set_console_log_level(level)
+                    print(f"✅ 控制台日志等级已设置为: {level}")
+                else:
+                    print("❌ 无效的等级选择")
+                    
+            elif choice == "2":
+                # 设置文件日志等级
+                print("\n设置文件日志等级:")
+                level_choice = input("请选择等级 (1-5): ").strip()
+                if level_choice in level_map:
+                    level = level_map[level_choice]
+                    set_file_log_level(level)
+                    print(f"✅ 文件日志等级已设置为: {level}")
+                else:
+                    print("❌ 无效的等级选择")
+                    
+            elif choice == "3":
+                # 同时设置控制台和文件日志等级
+                print("\n设置文件日志等级:")
+                file_level_choice = input("请选择文件日志等级 (1-5): ").strip()
+                print("\n设置控制台日志等级:")
+                console_level_choice = input("请选择控制台日志等级 (1-5): ").strip()
+                
+                if file_level_choice in level_map and console_level_choice in level_map:
+                    file_level = level_map[file_level_choice]
+                    console_level = level_map[console_level_choice]
+                    set_log_level(file_level, console_level)
+                    print(f"✅ 文件日志等级已设置为: {file_level}")
+                    print(f"✅ 控制台日志等级已设置为: {console_level}")
+                else:
+                    print("❌ 无效的等级选择")
+            else:
+                print("❌ 无效的选择")
+                
+        except (EOFError, KeyboardInterrupt):
+            print("\n操作已取消")
+        except Exception as e:
+            logger.error(f"设置日志等级失败: {e}")
+            print(f"❌ 设置失败: {e}")
+        
+        print("\n💡 提示: 日志等级设置立即生效，但不会保存到配置文件")
+        print("如需永久保存，请修改 config.yaml 文件中的 logging 配置")
 
 
 async def main():

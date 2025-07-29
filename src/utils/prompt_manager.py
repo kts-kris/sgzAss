@@ -8,6 +8,7 @@
 import yaml
 import os
 import logging
+import time
 from typing import Dict, Any, Optional, List
 from pathlib import Path
 from dataclasses import dataclass, field
@@ -110,6 +111,36 @@ As a Three Kingdoms strategy expert, quickly analyze the screenshot and return k
 Output requirements: Concise and accurate, precise coordinates, clear priorities.
 JSON format: {"scene":"interface_type","elements":[{"name":"element_name","x":x,"y":y}],"priority_action":"optimal_action"}
                 """
+            },
+            "screen_analysis": {
+                "zh": """
+你是一个专业的三国志战略版游戏助手。请分析这张游戏截图，并提供以下信息：
+
+1. 当前游戏界面状态（主界面、世界地图、城池界面等）
+2. 可见的UI元素和按钮
+3. 推荐的下一步操作
+4. 游戏策略建议
+
+请以JSON格式返回结果，包含：
+- current_scene: 当前场景类型
+- description: 详细描述
+- elements: 可交互元素列表
+- suggestions: 操作建议列表
+                """,
+                "en": """
+You are a professional Three Kingdoms strategy game assistant. Please analyze this game screenshot and provide the following information:
+
+1. Current game interface status (main interface, world map, city interface, etc.)
+2. Visible UI elements and buttons
+3. Recommended next actions
+4. Game strategy suggestions
+
+Please return results in JSON format, including:
+- current_scene: Current scene type
+- description: Detailed description
+- elements: List of interactive elements
+- suggestions: List of action suggestions
+                """
             }
         }
     
@@ -145,30 +176,29 @@ JSON format: {"scene":"interface_type","elements":[{"name":"element_name","x":x,
         with self._cache_lock:
             self._prompts.clear()
             
-            # 解析各类提示词
-            for category in ['game_analysis', 'ui_elements', 'action_suggestion', 'efficient_analysis']:
-                if category in data:
-                    self._prompts[category] = {}
-                    for lang, content in data[category].items():
-                        if isinstance(content, str):
-                            self._prompts[category][lang] = PromptTemplate(
-                                content=content.strip(),
-                                language=lang,
-                                category=category
-                            )
+            # 递归解析所有提示词数据
+            def parse_nested_prompts(data_dict, parent_key=""):
+                for key, value in data_dict.items():
+                    current_key = f"{parent_key}.{key}" if parent_key else key
+                    
+                    if isinstance(value, dict):
+                        # 检查是否是语言映射（包含zh、en等语言键）
+                        if any(lang_key in value for lang_key in ['zh', 'en', 'ja', 'ko']):
+                            # 这是一个提示词定义
+                            self._prompts[current_key] = {}
+                            for lang, content in value.items():
+                                if isinstance(content, str):
+                                    self._prompts[current_key][lang] = PromptTemplate(
+                                        content=content.strip(),
+                                        language=lang,
+                                        category=current_key
+                                    )
+                        else:
+                            # 继续递归解析
+                            parse_nested_prompts(value, current_key)
             
-            # 解析自定义提示词
-            if 'custom' in data:
-                for custom_name, custom_data in data['custom'].items():
-                    if isinstance(custom_data, dict):
-                        self._prompts[custom_name] = {}
-                        for lang, content in custom_data.items():
-                            if isinstance(content, str):
-                                self._prompts[custom_name][lang] = PromptTemplate(
-                                    content=content.strip(),
-                                    language=lang,
-                                    category=custom_name
-                                )
+            # 解析所有数据
+            parse_nested_prompts(data)
     
     def _load_builtin_prompts(self):
         """加载内置提示词"""
@@ -193,7 +223,19 @@ JSON format: {"scene":"interface_type","elements":[{"name":"element_name","x":x,
         if analysis_type and analysis_type in self._prompts:
             category = analysis_type
         
+        # 处理嵌套路径，如 automation_actions.tap
+        def get_nested_value(data, path):
+            keys = path.split('.')
+            current = data
+            for key in keys:
+                if isinstance(current, dict) and key in current:
+                    current = current[key]
+                else:
+                    return None
+            return current
+        
         with self._cache_lock:
+            # 首先尝试直接匹配
             if category in self._prompts:
                 if language in self._prompts[category]:
                     template = self._prompts[category][language]
@@ -212,6 +254,29 @@ JSON format: {"scene":"interface_type","elements":[{"name":"element_name","x":x,
                     template = next(iter(self._prompts[category].values()))
                     template.usage_count += 1
                     return template.content
+            
+            # 尝试嵌套路径匹配
+            nested_prompts = get_nested_value(self._prompts, category)
+            if nested_prompts and isinstance(nested_prompts, dict):
+                if language in nested_prompts:
+                    # 如果是PromptTemplate对象
+                    if hasattr(nested_prompts[language], 'content'):
+                        template = nested_prompts[language]
+                        template.usage_count += 1
+                        return template.content
+                    # 如果是字符串
+                    elif isinstance(nested_prompts[language], str):
+                        return nested_prompts[language]
+                
+                # 回退到默认语言
+                default_lang = self.config.prompt.default_language
+                if default_lang in nested_prompts:
+                    if hasattr(nested_prompts[default_lang], 'content'):
+                        template = nested_prompts[default_lang]
+                        template.usage_count += 1
+                        return template.content
+                    elif isinstance(nested_prompts[default_lang], str):
+                        return nested_prompts[default_lang]
         
         # 最后回退到内置提示词
         if category in self._builtin_prompts:
@@ -223,7 +288,27 @@ JSON format: {"scene":"interface_type","elements":[{"name":"element_name","x":x,
                 return next(iter(self._builtin_prompts[category].values()))
         
         logger.warning(f"未找到提示词: category={category}, language={language}")
-        return "请分析这张游戏截图。"  # 默认提示词
+        # 尝试从配置文件获取默认提示词
+        try:
+            return self.get_prompt("default_prompts.fallback", language)
+        except:
+            # 最后的兜底提示词，从配置中获取
+            fallback_prompts = self._prompts.get("default_prompts", {}).get("fallback", {})
+            if language and language in fallback_prompts:
+                return fallback_prompts[language]
+            elif "zh" in fallback_prompts:
+                return fallback_prompts["zh"]
+            else:
+                # 最终兜底，从配置文件读取
+                try:
+                    final_fallback = self._prompts.get("default_prompts", {}).get("fallback", {})
+                    if language and language in final_fallback:
+                        return final_fallback[language]
+                    elif "zh" in final_fallback:
+                        return final_fallback["zh"]
+                except Exception:
+                    pass
+                return "请分析这张游戏截图。"  # 最终硬编码兜底
     
     def get_optimized_prompt(self, category: str, language: Optional[str] = None,
                            context: Optional[Dict[str, Any]] = None) -> str:
@@ -235,18 +320,55 @@ JSON format: {"scene":"interface_type","elements":[{"name":"element_name","x":x,
         
         # 根据上下文优化提示词
         if context:
-            optimized = self._optimize_prompt_with_context(base_prompt, context)
+            optimized = self._optimize_prompt_with_context(base_prompt, context, language)
             return optimized
         
         return base_prompt
     
-    def _optimize_prompt_with_context(self, prompt: str, context: Dict[str, Any]) -> str:
+    def _get_detailed_prefix(self, language: Optional[str] = None) -> str:
+        """获取详细分析前缀"""
+        try:
+            detailed_prefix = self._prompts.get("default_prompts", {}).get("detailed_prefix", {})
+            if language and language in detailed_prefix:
+                return detailed_prefix[language]
+            elif "zh" in detailed_prefix:
+                return detailed_prefix["zh"]
+        except Exception:
+            pass
+        return "请详细分析并"  # 兜底
+    
+    def _get_analysis_prefix(self, language: Optional[str] = None) -> str:
+        """获取分析前缀"""
+        try:
+            analysis_prefix = self._prompts.get("default_prompts", {}).get("analysis_prefix", {})
+            if language and language in analysis_prefix:
+                return analysis_prefix[language]
+            elif "zh" in analysis_prefix:
+                return analysis_prefix["zh"]
+        except Exception:
+            pass
+        return "请详细"  # 兜底
+    
+    def _optimize_prompt_with_context(self, prompt: str, context: Dict[str, Any], language: Optional[str] = None) -> str:
         """根据上下文优化提示词"""
         # 简单的优化策略：根据历史成功率调整
         if context.get('recent_failures', 0) > 2:
             # 如果最近失败较多，使用更详细的提示词
-            if "请详细分析" not in prompt:
-                prompt = "请详细分析并" + prompt.lstrip("请")
+            detailed_prefix = self._get_detailed_prefix(language)
+            analysis_prefix = self._get_analysis_prefix(language)
+            if analysis_prefix not in prompt:
+                # 安全地处理提示词前缀，避免破坏原有格式
+                if prompt.startswith("请"):
+                    cleaned_prompt = prompt[1:].strip()
+                elif prompt.startswith("Please "):
+                    cleaned_prompt = prompt[7:].strip()
+                else:
+                    cleaned_prompt = prompt
+                # 确保前缀和内容之间有适当的连接
+                if cleaned_prompt and not cleaned_prompt.startswith("分析") and not cleaned_prompt.startswith("analyze"):
+                    prompt = detailed_prefix + cleaned_prompt
+                else:
+                    prompt = detailed_prefix + "分析" + cleaned_prompt if language == "zh" else detailed_prefix + "analyze" + cleaned_prompt
         
         elif context.get('avg_response_time', 0) > 5.0:
             # 如果响应时间较长，使用更简洁的提示词
@@ -263,45 +385,79 @@ JSON format: {"scene":"interface_type","elements":[{"name":"element_name","x":x,
     def update_prompt_performance(self, category: str, language: str, 
                                 success: bool, response_time: float):
         """更新提示词性能统计"""
+        should_optimize = False
+        
         with self._cache_lock:
             if category in self._prompts and language in self._prompts[category]:
                 template = self._prompts[category][language]
                 
-                # 更新成功率
+                # 先增加使用计数
+                template.usage_count += 1
                 total_uses = template.usage_count
-                if total_uses > 0:
+                
+                # 更新成功率
+                if total_uses == 1:
+                    # 第一次使用
+                    template.success_rate = 1.0 if success else 0.0
+                else:
+                    # 计算新的成功率
                     current_success_rate = template.success_rate
                     new_success_rate = (current_success_rate * (total_uses - 1) + (1.0 if success else 0.0)) / total_uses
                     template.success_rate = new_success_rate
                 
                 # 更新平均响应时间
-                if total_uses > 0:
+                if total_uses == 1:
+                    # 第一次使用
+                    template.avg_response_time = response_time
+                else:
+                    # 计算新的平均响应时间
                     current_avg_time = template.avg_response_time
                     new_avg_time = (current_avg_time * (total_uses - 1) + response_time) / total_uses
                     template.avg_response_time = new_avg_time
                 
-                # 检查是否需要优化
+                # 检查是否需要优化（但不在锁内执行优化）
                 self._optimization_counter += 1
                 if (self._optimization_counter >= self.config.prompt.optimization_frequency and 
                     self.config.prompt.enable_optimization):
-                    self._optimize_prompts()
+                    should_optimize = True
                     self._optimization_counter = 0
+        
+        # 在锁外执行优化，避免死锁
+        if should_optimize:
+            try:
+                self._optimize_prompts()
+            except Exception as e:
+                logger.error(f"提示词优化失败: {e}")
     
     def _optimize_prompts(self):
         """优化提示词（基于性能统计）"""
         logger.info("开始优化提示词...")
+        
+        optimization_count = 0
         
         with self._cache_lock:
             for category, lang_templates in self._prompts.items():
                 for lang, template in lang_templates.items():
                     if template.usage_count >= 5:  # 至少使用5次才进行优化
                         if template.success_rate < 0.7:  # 成功率低于70%
-                            logger.info(f"提示词成功率较低，需要优化: {category}.{lang} (成功率: {template.success_rate:.2f})")
-                            # 这里可以实现具体的优化逻辑
+                            logger.info(f"提示词成功率较低，正在优化: {category}.{lang} (成功率: {template.success_rate:.2f})")
+                            # 简单的优化策略：添加更详细的指导
+                            analysis_prefix = self._get_analysis_prefix(lang)
+                            if analysis_prefix not in template.content:
+                                template.content = analysis_prefix + template.content
+                            template.last_optimized = str(int(time.time()))
+                            optimization_count += 1
                         
                         elif template.avg_response_time > 10.0:  # 响应时间超过10秒
-                            logger.info(f"提示词响应时间较长，需要优化: {category}.{lang} (平均时间: {template.avg_response_time:.2f}s)")
-                            # 这里可以实现具体的优化逻辑
+                            logger.info(f"提示词响应时间较长，正在优化: {category}.{lang} (平均时间: {template.avg_response_time:.2f}s)")
+                            # 简化提示词以减少响应时间
+                            if len(template.content) > 100:
+                                template.content = template.content[:100] + "..."
+                            template.last_optimized = str(int(time.time()))
+                            optimization_count += 1
+        
+        logger.info(f"提示词优化完成，共优化了 {optimization_count} 个提示词")
+        return optimization_count > 0
     
     def reload_prompts(self):
         """重新加载提示词配置"""

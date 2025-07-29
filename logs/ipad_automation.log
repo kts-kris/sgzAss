@@ -413,3 +413,174 @@
 2025-07-28 11:20:26 | DEBUG | src.services.connection:get_screenshot:472 | 截图成功，耗时: 1.438秒
 2025-07-28 11:20:28 | DEBUG | src.services.connection:get_screenshot:472 | 截图成功，耗时: 1.457秒
 2025-07-28 11:20:31 | DEBUG | src.services.connection:get_screenshot:472 | 截图成功，耗时: 1.432秒
+2025-07-29 12:03:13 | INFO | src.utils.logger:setup_logger:77 | 日志系统初始化完成
+2025-07-29 12:03:13 | INFO | src.services.vision:_load_templates:49 | 正在从 templates 加载模板图像...
+2025-07-29 12:03:13 | INFO | src.services.vision:_load_templates:79 | 模板加载完成，共 0 个模板
+2025-07-29 12:03:13 | INFO | src.services.vision:enable_vlm:92 | VLM大模型识别已启用
+2025-07-29 12:03:13 | INFO | src.controllers.game_assistant:_initialize_services:76 | Ollama VLM服务已启用，模型: qwen2.5vl:latest
+2025-07-29 12:03:13 | INFO | src.services.connection:connect:313 | 正在连接USB设备...
+2025-07-29 12:03:13 | INFO | src.services.connection:connect:325 | 检测到设备: Unknown Device (iOS Unknown, Unknown)
+2025-07-29 12:03:13 | WARNING | src.services.connection:connect:346 | 标准截图服务不可用: InvalidService
+2025-07-29 12:03:13 | INFO | src.services.connection:connect:347 | 尝试使用外部命令进行截图...
+2025-07-29 12:03:13 | INFO | src.services.connection:connect:363 | 将使用外部命令进行截图
+2025-07-29 12:03:13 | INFO | src.services.connection:connect:367 | 正在测试外部截图命令...
+2025-07-29 12:03:14 | INFO | src.services.connection:connect:371 | 屏幕尺寸: 2752x2064
+2025-07-29 12:03:14 | INFO | src.services.connection:connect:411 | USB连接成功，耗时: 1.24秒
+2025-07-29 12:03:14 | INFO | src.controllers.game_assistant:_initialize_services:84 | 设备连接成功
+2025-07-29 12:03:14 | INFO | src.controllers.game_assistant:_initialize_services:92 | 截图管理器已初始化
+2025-07-29 12:03:14 | INFO | src.controllers.game_assistant:_initialize_services:100 | 异步分析管理器已启用
+2025-07-29 12:03:14 | INFO | src.services.vision:_load_templates:49 | 正在从 templates 加载模板图像...
+2025-07-29 12:03:14 | INFO | src.services.vision:_load_templates:79 | 模板加载完成，共 0 个模板
+2025-07-29 12:03:14 | INFO | src.services.vision:enable_vlm:92 | VLM大模型识别已启用
+2025-07-29 12:03:14 | INFO | src.controllers.game_assistant:_initialize_services:76 | Ollama VLM服务已启用，模型: qwen2.5vl:latest
+2025-07-29 12:03:14 | INFO | src.services.connection:connect:313 | 正在连接USB设备...
+2025-07-29 12:03:14 | INFO | src.services.connection:connect:325 | 检测到设备: Unknown Device (iOS Unknown, Unknown)
+2025-07-29 12:03:14 | WARNING | src.services.connection:connect:346 | 标准截图服务不可用: InvalidService
+2025-07-29 12:03:14 | INFO | src.services.connection:connect:347 | 尝试使用外部命令进行截图...
+2025-07-29 12:03:14 | INFO | src.services.connection:connect:363 | 将使用外部命令进行截图
+2025-07-29 12:03:14 | INFO | src.services.connection:connect:367 | 正在测试外部截图命令...
+2025-07-29 12:03:15 | INFO | src.services.connection:connect:371 | 屏幕尺寸: 2752x2064
+2025-07-29 12:03:15 | INFO | src.services.connection:connect:411 | USB连接成功，耗时: 1.12秒
+2025-07-29 12:03:15 | INFO | src.controllers.game_assistant:_initialize_services:84 | 设备连接成功
+2025-07-29 12:03:15 | INFO | src.controllers.game_assistant:_initialize_services:92 | 截图管理器已初始化
+2025-07-29 12:03:15 | INFO | src.controllers.game_assistant:_initialize_services:100 | 异步分析管理器已启用
+2025-07-29 12:03:50 | INFO | src.utils.logger:setup_logger:77 | 日志系统初始化完成
+2025-07-29 12:03:50 | INFO | src.services.vision:_load_templates:49 | 正在从 templates 加载模板图像...
+2025-07-29 12:03:50 | INFO | src.services.vision:_load_templates:79 | 模板加载完成，共 0 个模板
+2025-07-29 12:03:50 | INFO | src.services.vision:enable_vlm:92 | VLM大模型识别已启用
+2025-07-29 12:03:50 | INFO | src.controllers.game_assistant:_initialize_services:76 | Ollama VLM服务已启用，模型: qwen2.5vl:latest
+2025-07-29 12:03:50 | INFO | src.services.connection:connect:313 | 正在连接USB设备...
+2025-07-29 12:03:50 | INFO | src.services.connection:connect:325 | 检测到设备: Unknown Device (iOS Unknown, Unknown)
+2025-07-29 12:03:50 | WARNING | src.services.connection:connect:346 | 标准截图服务不可用: InvalidService
+2025-07-29 12:03:50 | INFO | src.services.connection:connect:347 | 尝试使用外部命令进行截图...
+2025-07-29 12:03:50 | INFO | src.services.connection:connect:363 | 将使用外部命令进行截图
+2025-07-29 12:03:50 | INFO | src.services.connection:connect:367 | 正在测试外部截图命令...
+2025-07-29 12:03:51 | INFO | src.services.connection:connect:371 | 屏幕尺寸: 2752x2064
+2025-07-29 12:03:51 | INFO | src.services.connection:connect:411 | USB连接成功，耗时: 1.16秒
+2025-07-29 12:03:51 | INFO | src.controllers.game_assistant:_initialize_services:84 | 设备连接成功
+2025-07-29 12:03:51 | INFO | src.controllers.game_assistant:_initialize_services:92 | 截图管理器已初始化
+2025-07-29 12:03:51 | INFO | src.controllers.game_assistant:_initialize_services:100 | 异步分析管理器已启用
+2025-07-29 12:03:51 | INFO | src.controllers.game_assistant:start_assistant:133 | 🎮 《三国志战略版》游戏助手已启动
+2025-07-29 12:03:51 | INFO | src.services.ollama_vlm:initialize:93 | Ollama VLM服务初始化成功，使用模型: qwen2.5vl:latest
+2025-07-29 12:03:51 | INFO | src.controllers.game_assistant:start_assistant:140 | Ollama VLM服务已启动
+2025-07-29 12:03:51 | INFO | src.services.ollama_vlm:initialize:93 | Ollama VLM服务初始化成功，使用模型: qwen2.5vl:latest
+2025-07-29 12:03:51 | INFO | src.controllers.game_assistant:_initialize_vlm_service:112 | VLM服务异步初始化成功
+2025-07-29 12:03:51 | INFO | src.services.ollama_vlm:initialize:93 | Ollama VLM服务初始化成功，使用模型: qwen2.5vl:latest
+2025-07-29 12:03:51 | INFO | src.services.async_analysis_manager:initialize:152 | 异步分析管理器初始化成功
+2025-07-29 12:03:51 | INFO | src.controllers.game_assistant:start_assistant:167 | ✅ 游戏助手启动完成，等待用户操作
+2025-07-29 12:03:51 | INFO | src.services.async_analysis_manager:_task_processor:424 | 任务处理器已启动
+2025-07-29 12:03:52 | DEBUG | src.services.connection:get_screenshot:473 | 截图成功，耗时: 0.931秒
+2025-07-29 12:03:52 | DEBUG | src.utils.screenshot:take_screenshot:60 | 异步截图获取成功
+2025-07-29 12:03:52 | DEBUG | src.utils.helpers:save_screenshot:717 | 截图已保存: /Users/liuweigang/sgzAss/resources/screenshots/analysis_screenshot_1753761832.png
+2025-07-29 12:03:52 | DEBUG | src.utils.screenshot:save_screenshot_async:142 | 截图已保存: /Users/liuweigang/sgzAss/resources/screenshots/analysis_screenshot_1753761832.png
+2025-07-29 12:03:52 | DEBUG | src.utils.screenshot:cleanup_old_screenshots:271 | 已删除旧截图: analysis_screenshot_1753761223.png
+2025-07-29 12:03:52 | INFO | src.utils.screenshot:cleanup_old_screenshots:276 | 清理完成，删除了 1 个旧截图文件
+2025-07-29 12:03:52 | DEBUG | src.controllers.game_assistant:analyze_current_screen:235 | 分析截图已保存: /Users/liuweigang/sgzAss/resources/screenshots/analysis_screenshot_1753761832.png
+2025-07-29 12:03:52 | INFO | src.services.async_analysis_manager:analyze_screenshot:277 | 分析任务已提交: analysis_1753761832830
+2025-07-29 12:03:52 | INFO | src.services.async_analysis_manager:_process_task:464 | 开始处理分析任务: analysis_1753761832830
+2025-07-29 12:03:52 | ERROR | src.services.async_analysis_manager:_save_task_screenshot:616 | 保存截图失败: 'ConfigManager' object has no attribute 'save_analysis_screenshots'
+2025-07-29 12:04:06 | ERROR | src.services.ollama_vlm:_parse_vlm_response:362 | 响应解析失败: 'str' object has no attribute 'get'
+2025-07-29 12:04:06 | INFO | src.services.ollama_vlm:analyze_screenshot_async:143 | VLM分析完成，耗时: 13.96秒
+2025-07-29 12:04:06 | INFO | src.services.async_analysis_manager:_process_task:515 | 分析任务完成: analysis_1753761832830, 耗时: 13.96秒
+2025-07-29 12:04:07 | INFO | src.controllers.game_assistant:stop_assistant:180 | 🛑 正在停止游戏助手...
+2025-07-29 12:04:07 | INFO | src.services.async_analysis_manager:stop:166 | 正在停止异步分析管理器...
+2025-07-29 12:04:07 | INFO | src.services.ollama_vlm:stop:561 | Ollama VLM服务已停止
+2025-07-29 12:04:07 | INFO | src.services.async_analysis_manager:stop:204 | 线程池已安全关闭
+2025-07-29 12:04:07 | INFO | src.services.async_analysis_manager:stop:208 | 异步分析管理器已停止
+2025-07-29 12:04:07 | INFO | src.services.ollama_vlm:stop:561 | Ollama VLM服务已停止
+2025-07-29 12:04:07 | INFO | src.controllers.game_assistant:stop_assistant:190 | Ollama VLM服务已停止
+2025-07-29 12:04:07 | INFO | src.services.connection:disconnect:439 | 正在断开设备连接...
+2025-07-29 12:04:07 | INFO | src.services.connection:disconnect:450 | 设备连接已断开
+2025-07-29 12:04:07 | INFO | src.controllers.game_assistant:stop_assistant:198 | 设备连接已断开
+2025-07-29 12:04:07 | INFO | src.controllers.game_assistant:stop_assistant:200 | ✅ 游戏助手已停止
+2025-07-29 12:04:07 | INFO | src.services.vision:_load_templates:49 | 正在从 templates 加载模板图像...
+2025-07-29 12:04:07 | INFO | src.services.vision:_load_templates:79 | 模板加载完成，共 0 个模板
+2025-07-29 12:04:07 | INFO | src.services.vision:enable_vlm:92 | VLM大模型识别已启用
+2025-07-29 12:04:07 | INFO | src.controllers.game_assistant:_initialize_services:76 | Ollama VLM服务已启用，模型: qwen2.5vl:latest
+2025-07-29 12:04:08 | INFO | src.services.connection:connect:313 | 正在连接USB设备...
+2025-07-29 12:04:08 | INFO | src.services.connection:connect:325 | 检测到设备: Unknown Device (iOS Unknown, Unknown)
+2025-07-29 12:04:08 | WARNING | src.services.connection:connect:346 | 标准截图服务不可用: InvalidService
+2025-07-29 12:04:08 | INFO | src.services.connection:connect:347 | 尝试使用外部命令进行截图...
+2025-07-29 12:04:08 | INFO | src.services.connection:connect:363 | 将使用外部命令进行截图
+2025-07-29 12:04:08 | INFO | src.services.connection:connect:367 | 正在测试外部截图命令...
+2025-07-29 12:04:09 | INFO | src.services.connection:connect:371 | 屏幕尺寸: 2752x2064
+2025-07-29 12:04:09 | INFO | src.services.connection:connect:411 | USB连接成功，耗时: 1.33秒
+2025-07-29 12:04:09 | INFO | src.controllers.game_assistant:_initialize_services:84 | 设备连接成功
+2025-07-29 12:04:09 | INFO | src.controllers.game_assistant:_initialize_services:92 | 截图管理器已初始化
+2025-07-29 12:04:09 | INFO | src.controllers.game_assistant:_initialize_services:100 | 异步分析管理器已启用
+2025-07-29 12:04:09 | INFO | src.controllers.game_assistant:start_assistant:133 | 🎮 《三国志战略版》游戏助手已启动
+2025-07-29 12:04:09 | INFO | src.services.ollama_vlm:initialize:93 | Ollama VLM服务初始化成功，使用模型: qwen2.5vl:latest
+2025-07-29 12:04:09 | INFO | src.controllers.game_assistant:_initialize_vlm_service:112 | VLM服务异步初始化成功
+2025-07-29 12:04:09 | INFO | src.services.ollama_vlm:initialize:93 | Ollama VLM服务初始化成功，使用模型: qwen2.5vl:latest
+2025-07-29 12:04:09 | INFO | src.controllers.game_assistant:start_assistant:140 | Ollama VLM服务已启动
+2025-07-29 12:04:09 | INFO | src.services.ollama_vlm:initialize:93 | Ollama VLM服务初始化成功，使用模型: qwen2.5vl:latest
+2025-07-29 12:04:09 | INFO | src.services.async_analysis_manager:initialize:152 | 异步分析管理器初始化成功
+2025-07-29 12:04:09 | INFO | src.controllers.game_assistant:start_assistant:167 | ✅ 游戏助手启动完成，等待用户操作
+2025-07-29 12:04:09 | INFO | src.services.async_analysis_manager:_task_processor:424 | 任务处理器已启动
+2025-07-29 12:04:10 | DEBUG | src.services.connection:get_screenshot:473 | 截图成功，耗时: 0.920秒
+2025-07-29 12:04:10 | DEBUG | src.utils.screenshot:take_screenshot:60 | 异步截图获取成功
+2025-07-29 12:04:10 | DEBUG | src.utils.helpers:save_screenshot:717 | 截图已保存: /Users/liuweigang/sgzAss/resources/screenshots/analysis_screenshot_1753761850.png
+2025-07-29 12:04:10 | DEBUG | src.utils.screenshot:save_screenshot_async:142 | 截图已保存: /Users/liuweigang/sgzAss/resources/screenshots/analysis_screenshot_1753761850.png
+2025-07-29 12:04:10 | DEBUG | src.utils.screenshot:cleanup_old_screenshots:271 | 已删除旧截图: analysis_analysis_1753761253999_2025-07-29 11:54:13.png
+2025-07-29 12:04:10 | INFO | src.utils.screenshot:cleanup_old_screenshots:276 | 清理完成，删除了 1 个旧截图文件
+2025-07-29 12:04:10 | DEBUG | src.controllers.game_assistant:analyze_current_screen:235 | 分析截图已保存: /Users/liuweigang/sgzAss/resources/screenshots/analysis_screenshot_1753761850.png
+2025-07-29 12:04:10 | INFO | src.services.async_analysis_manager:analyze_screenshot:277 | 分析任务已提交: analysis_1753761850162
+2025-07-29 12:04:10 | INFO | src.services.async_analysis_manager:_process_task:464 | 开始处理分析任务: analysis_1753761850162
+2025-07-29 12:04:10 | ERROR | src.services.async_analysis_manager:_save_task_screenshot:616 | 保存截图失败: 'ConfigManager' object has no attribute 'save_analysis_screenshots'
+2025-07-29 12:04:12 | ERROR | src.services.ollama_vlm:_parse_vlm_response:362 | 响应解析失败: 'str' object has no attribute 'get'
+2025-07-29 12:04:12 | INFO | src.services.ollama_vlm:analyze_screenshot_async:143 | VLM分析完成，耗时: 2.62秒
+2025-07-29 12:04:12 | INFO | src.services.async_analysis_manager:_process_task:515 | 分析任务完成: analysis_1753761850162, 耗时: 2.62秒
+2025-07-29 12:04:14 | DEBUG | src.services.connection:get_screenshot:473 | 截图成功，耗时: 0.965秒
+2025-07-29 12:04:14 | DEBUG | src.utils.screenshot:take_screenshot:60 | 异步截图获取成功
+2025-07-29 12:04:14 | DEBUG | src.utils.helpers:save_screenshot:717 | 截图已保存: /Users/liuweigang/sgzAss/resources/screenshots/analysis_screenshot_1753761854.png
+2025-07-29 12:04:14 | DEBUG | src.utils.screenshot:save_screenshot_async:142 | 截图已保存: /Users/liuweigang/sgzAss/resources/screenshots/analysis_screenshot_1753761854.png
+2025-07-29 12:04:14 | DEBUG | src.utils.screenshot:cleanup_old_screenshots:271 | 已删除旧截图: analysis_screenshot_1753761285.png
+2025-07-29 12:04:14 | INFO | src.utils.screenshot:cleanup_old_screenshots:276 | 清理完成，删除了 1 个旧截图文件
+2025-07-29 12:04:14 | DEBUG | src.controllers.game_assistant:analyze_current_screen:235 | 分析截图已保存: /Users/liuweigang/sgzAss/resources/screenshots/analysis_screenshot_1753761854.png
+2025-07-29 12:04:14 | INFO | src.services.async_analysis_manager:analyze_screenshot:277 | 分析任务已提交: analysis_1753761854811
+2025-07-29 12:04:14 | INFO | src.services.async_analysis_manager:_process_task:464 | 开始处理分析任务: analysis_1753761854811
+2025-07-29 12:04:14 | ERROR | src.services.async_analysis_manager:_save_task_screenshot:616 | 保存截图失败: 'ConfigManager' object has no attribute 'save_analysis_screenshots'
+2025-07-29 12:04:18 | ERROR | src.services.ollama_vlm:_parse_vlm_response:362 | 响应解析失败: 'str' object has no attribute 'get'
+2025-07-29 12:04:18 | INFO | src.services.ollama_vlm:analyze_screenshot_async:143 | VLM分析完成，耗时: 3.49秒
+2025-07-29 12:04:18 | INFO | src.services.async_analysis_manager:_process_task:515 | 分析任务完成: analysis_1753761854811, 耗时: 3.49秒
+2025-07-29 12:04:20 | DEBUG | src.services.connection:get_screenshot:473 | 截图成功，耗时: 0.948秒
+2025-07-29 12:04:20 | DEBUG | src.utils.screenshot:take_screenshot:60 | 异步截图获取成功
+2025-07-29 12:04:20 | DEBUG | src.utils.helpers:save_screenshot:717 | 截图已保存: /Users/liuweigang/sgzAss/resources/screenshots/analysis_screenshot_1753761860.png
+2025-07-29 12:04:20 | DEBUG | src.utils.screenshot:save_screenshot_async:142 | 截图已保存: /Users/liuweigang/sgzAss/resources/screenshots/analysis_screenshot_1753761860.png
+2025-07-29 12:04:20 | DEBUG | src.utils.screenshot:cleanup_old_screenshots:271 | 已删除旧截图: analysis_screenshot_1753761832.png
+2025-07-29 12:04:20 | INFO | src.utils.screenshot:cleanup_old_screenshots:276 | 清理完成，删除了 1 个旧截图文件
+2025-07-29 12:04:20 | DEBUG | src.controllers.game_assistant:analyze_current_screen:235 | 分析截图已保存: /Users/liuweigang/sgzAss/resources/screenshots/analysis_screenshot_1753761860.png
+2025-07-29 12:04:20 | INFO | src.services.async_analysis_manager:analyze_screenshot:277 | 分析任务已提交: analysis_1753761860352
+2025-07-29 12:04:20 | INFO | src.services.async_analysis_manager:_process_task:464 | 开始处理分析任务: analysis_1753761860352
+2025-07-29 12:04:20 | ERROR | src.services.async_analysis_manager:_save_task_screenshot:616 | 保存截图失败: 'ConfigManager' object has no attribute 'save_analysis_screenshots'
+2025-07-29 12:04:24 | ERROR | src.services.ollama_vlm:_parse_vlm_response:362 | 响应解析失败: 'str' object has no attribute 'get'
+2025-07-29 12:04:24 | INFO | src.services.ollama_vlm:analyze_screenshot_async:143 | VLM分析完成，耗时: 3.85秒
+2025-07-29 12:04:24 | INFO | src.services.async_analysis_manager:_process_task:515 | 分析任务完成: analysis_1753761860352, 耗时: 3.85秒
+2025-07-29 12:04:25 | INFO | src.controllers.game_assistant:stop_assistant:180 | 🛑 正在停止游戏助手...
+2025-07-29 12:04:25 | INFO | src.services.async_analysis_manager:stop:166 | 正在停止异步分析管理器...
+2025-07-29 12:04:25 | INFO | src.services.ollama_vlm:stop:561 | Ollama VLM服务已停止
+2025-07-29 12:04:25 | INFO | src.services.async_analysis_manager:stop:204 | 线程池已安全关闭
+2025-07-29 12:04:25 | INFO | src.services.async_analysis_manager:stop:208 | 异步分析管理器已停止
+2025-07-29 12:04:25 | INFO | src.services.ollama_vlm:stop:561 | Ollama VLM服务已停止
+2025-07-29 12:04:25 | INFO | src.controllers.game_assistant:stop_assistant:190 | Ollama VLM服务已停止
+2025-07-29 12:04:25 | INFO | src.services.connection:disconnect:439 | 正在断开设备连接...
+2025-07-29 12:04:25 | INFO | src.services.connection:disconnect:450 | 设备连接已断开
+2025-07-29 12:04:25 | INFO | src.controllers.game_assistant:stop_assistant:198 | 设备连接已断开
+2025-07-29 12:04:25 | INFO | src.controllers.game_assistant:stop_assistant:200 | ✅ 游戏助手已停止
+2025-07-29 17:01:02 | INFO | src.utils.logger:setup_logger:78 | 日志系统初始化完成
+2025-07-29 17:01:02 | DEBUG | __main__:test_logger_setup:72 | 这是DEBUG级别的日志
+2025-07-29 17:01:02 | INFO | __main__:test_logger_setup:73 | 这是INFO级别的日志
+2025-07-29 17:01:02 | WARNING | __main__:test_logger_setup:74 | 这是WARNING级别的日志
+2025-07-29 17:01:02 | ERROR | __main__:test_logger_setup:75 | 这是ERROR级别的日志
+2025-07-29 17:01:02 | CRITICAL | __main__:test_logger_setup:76 | 这是CRITICAL级别的日志
+2025-07-29 17:01:02 | INFO | src.utils.logger:remove_handler:145 | 移除日志处理器: 1
+2025-07-29 17:01:02 | INFO | src.utils.logger:set_console_level:196 | 控制台日志级别已设置为: WARNING
+2025-07-29 17:01:02 | DEBUG | __main__:test_dynamic_log_level:96 | DEBUG: 这条消息应该不会在控制台显示
+2025-07-29 17:01:02 | INFO | __main__:test_dynamic_log_level:97 | INFO: 这条消息应该不会在控制台显示
+2025-07-29 17:01:02 | WARNING | __main__:test_dynamic_log_level:98 | WARNING: 这条消息应该在控制台显示
+2025-07-29 17:01:02 | ERROR | __main__:test_dynamic_log_level:99 | ERROR: 这条消息应该在控制台显示
+2025-07-29 17:01:02 | ERROR | __main__:test_dynamic_log_level:107 | ERROR: 这条消息应该写入文件
+2025-07-29 17:01:02 | INFO | src.utils.logger:setup_logger:78 | 日志系统初始化完成
+2025-07-29 17:01:02 | DEBUG | __main__:test_dynamic_log_level:112 | DEBUG: 这条消息应该写入文件但不在控制台显示
+2025-07-29 17:01:02 | INFO | __main__:test_dynamic_log_level:113 | INFO: 这条消息应该同时写入文件和控制台显示
+2025-07-29 17:01:02 | WARNING | __main__:test_dynamic_log_level:114 | WARNING: 这条消息应该同时写入文件和控制台显示

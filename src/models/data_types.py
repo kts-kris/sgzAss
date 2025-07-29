@@ -202,6 +202,7 @@ class VLMResult:
     screen_type: str = "unknown"
     error_message: Optional[str] = None
     raw_response: Dict[str, Any] = None
+    used_prompt: Optional[str] = None  # 添加使用的提示词字段
 
     def __post_init__(self):
         if self.raw_response is None:

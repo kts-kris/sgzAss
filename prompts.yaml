@@ -7,7 +7,7 @@ default_language: "zh"
 # 游戏分析提示词
 game_analysis:
   zh: |
-    你是一个专业的三国志战略版游戏助手。请分析这张游戏截图，并提供以下信息：
+    你是一个专业的三国志战略版游戏助手。请分析这张三国志战略版游戏截图，并提供以下信息：
 
     1. 当前游戏界面状态（主界面、世界地图、城池界面等）
     2. 可见的UI元素和按钮
@@ -38,6 +38,7 @@ game_analysis:
           "parameters": {}
         }
       ],
+      "todo": “如果你就是该玩家，请你用一句话描述你下一步的具体操作是什么”,
       "confidence": 总体置信度
     }
   
@@ -79,7 +80,7 @@ game_analysis:
 # UI元素识别提示词
 ui_elements:
   zh: |
-    请仔细分析这张游戏截图中的所有UI元素，包括：
+    请仔细分析这张三国志战略版游戏截图中的所有UI元素，包括：
     - 按钮和图标
     - 文本标签
     - 输入框
@@ -103,7 +104,7 @@ ui_elements:
 # 操作建议提示词
 action_suggestion:
   zh: |
-    基于当前游戏状态，请提供最优的操作建议：
+    基于当前三国志战略版游戏状态，请提供最优的操作建议：
     1. 分析当前可执行的操作
     2. 评估每个操作的优先级
     3. 考虑游戏策略和效率
@@ -154,6 +155,40 @@ efficient_analysis:
     
     JSON format: {"scene":"interface_type","elements":[{"name":"element_name","x":x,"y":y,"action":"suggested_action"}],"priority_action":"optimal_action"}
 
+# 屏幕分析提示词
+screen_analysis:
+  zh: |
+    你是一个专业的三国志战略版游戏助手。请分析这张游戏截图，并提供以下信息：
+
+    1. 当前游戏界面状态（主界面、世界地图、城池界面等）
+    2. 可见的UI元素和按钮
+    3. 推荐的下一步操作
+    4. 游戏策略建议
+
+    请以JSON格式返回结果，包含：
+    - current_scene: 当前场景类型
+    - description: 详细描述
+    - elements: 可交互元素列表
+    - suggestions: 操作建议列表
+    - todo: 下一步操作建议
+    - confidence: 分析置信度
+  
+  en: |
+    You are a professional Three Kingdoms strategy game assistant. Please analyze this game screenshot and provide the following information:
+
+    1. Current game interface status (main interface, world map, city interface, etc.)
+    2. Visible UI elements and buttons
+    3. Recommended next actions
+    4. Game strategy suggestions
+
+    Please return in JSON format, including:
+    - current_scene: current scene type
+    - description: detailed description
+    - elements: list of interactive elements
+    - suggestions: list of action suggestions
+    - todo: next action suggestion
+    - confidence: analysis confidence
+
 # 自定义提示词（用户可修改）
 custom:
   user_defined_1:
@@ -194,6 +229,70 @@ optimization:
     min_confidence: 0.7
     # 优化频率（每N次分析后优化一次）
     optimization_frequency: 10
+
+# 提示词优化相关配置
+prompt_optimization:
+  zh: |
+    基于以下游戏分析历史和用户反馈，请优化游戏截图分析的提示词：
+
+    历史模式：
+    {patterns}
+
+    用户反馈：
+    {feedback}
+
+    请生成一个更准确、更有针对性的提示词，提高分析质量。
+  
+  en: |
+    Based on the following game analysis history and user feedback, please optimize the game screenshot analysis prompt:
+
+    Historical patterns:
+    {patterns}
+
+    User feedback:
+    {feedback}
+
+    Please generate a more accurate and targeted prompt to improve analysis quality.
+
+# 默认提示词配置
+default_prompts:
+  fallback:
+    zh: "你是一个专业的三国志战略版游戏助手。请分析这张三国志战略版游戏截图，给出一句话的行动指示。"
+    en: "You are a professional Three Kingdoms strategy game assistant. Please analyze this game screenshot and provide a single sentence action instruction."
+  
+  analysis_failed:
+    zh: "分析失败，请重试"
+    en: "Analysis failed, please retry"
+  
+  detailed_prefix:
+    zh: "请详细分析并"
+    en: "Please analyze in detail and "
+  
+  analysis_prefix:
+    zh: "请详细"
+    en: "Please analyze in detail "
+
+# 自动化操作描述配置
+automation_actions:
+  tap:
+    zh: "点击 ({x}, {y})"
+    en: "Tap ({x}, {y})"
+  
+  swipe:
+    zh: "滑动 ({start_x}, {start_y}) -> ({end_x}, {end_y})"
+    en: "Swipe ({start_x}, {start_y}) -> ({end_x}, {end_y})"
+  
+  long_press:
+    zh: "长按 ({x}, {y}) {duration}秒"
+    en: "Long press ({x}, {y}) for {duration}s"
+  
+  home:
+    zh: "按下Home键"
+    en: "Press Home button"
+  
+  wait:
+    zh: "等待 {duration} 秒"
+    en: "Wait {duration} seconds"
 
 # 模型参数配置
 model_parameters:

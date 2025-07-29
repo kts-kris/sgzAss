@@ -43,10 +43,11 @@ class LoggerManager:
         # 设置控制台输出
         if config.console_output:
             console_format = self._get_console_format(config)
+            console_level = getattr(config, 'console_level', config.level)
             handler_id = logger.add(
                 sys.stderr,
                 format=console_format,
-                level=config.level.upper(),
+                level=console_level.upper(),
                 colorize=config.colored_output,
                 backtrace=True,
                 diagnose=True
@@ -145,11 +146,12 @@ class LoggerManager:
         except ValueError:
             logger.warning(f"日志处理器不存在: {handler_id}")
     
-    def set_level(self, level: str):
+    def set_level(self, level: str, console_level: Optional[str] = None):
         """设置日志级别
         
         Args:
-            level: 日志级别
+            level: 文件日志级别
+            console_level: 控制台日志级别，如果为None则使用level
         """
         # 移除现有处理器
         for handler_id in list(self._handlers.values()):
@@ -161,7 +163,70 @@ class LoggerManager:
         # 重新设置日志
         config = get_config().logging
         config.level = level
+        if console_level is not None:
+            config.console_level = console_level
         self.setup_logger(config)
+    
+    def set_console_level(self, level: str):
+        """单独设置控制台日志级别
+        
+        Args:
+            level: 控制台日志级别
+        """
+        if 'console' in self._handlers:
+            # 移除现有控制台处理器
+            self.remove_handler(self._handlers['console'])
+            del self._handlers['console']
+            
+            # 重新添加控制台处理器
+            config = get_config().logging
+            config.console_level = level
+            
+            if config.console_output:
+                console_format = self._get_console_format(config)
+                handler_id = logger.add(
+                    sys.stderr,
+                    format=console_format,
+                    level=level.upper(),
+                    colorize=config.colored_output,
+                    backtrace=True,
+                    diagnose=True
+                )
+                self._handlers['console'] = handler_id
+                logger.info(f"控制台日志级别已设置为: {level}")
+    
+    def set_file_level(self, level: str):
+        """单独设置文件日志级别
+        
+        Args:
+            level: 文件日志级别
+        """
+        if 'file' in self._handlers:
+            # 移除现有文件处理器
+            self.remove_handler(self._handlers['file'])
+            del self._handlers['file']
+            
+            # 重新添加文件处理器
+            config = get_config().logging
+            config.level = level
+            
+            if config.file_path:
+                file_path = Path(config.file_path).expanduser().resolve()
+                file_path.parent.mkdir(parents=True, exist_ok=True)
+                
+                handler_id = logger.add(
+                    str(file_path),
+                    format=config.format,
+                    level=level.upper(),
+                    rotation=config.max_file_size,
+                    retention=config.backup_count,
+                    compression="zip",
+                    backtrace=True,
+                    diagnose=True,
+                    encoding="utf-8"
+                )
+                self._handlers['file'] = handler_id
+                logger.info(f"文件日志级别已设置为: {level}")
     
     def get_logger(self, name: Optional[str] = None):
         """获取日志器
@@ -341,6 +406,34 @@ def log_action(action_type: str, target: str, result: str,
         details: 详细信息
     """
     get_logger_manager().log_action(action_type, target, result, duration, details)
+
+
+def set_log_level(level: str, console_level: Optional[str] = None):
+    """设置日志级别
+    
+    Args:
+        level: 文件日志级别
+        console_level: 控制台日志级别，如果为None则使用level
+    """
+    get_logger_manager().set_level(level, console_level)
+
+
+def set_console_log_level(level: str):
+    """设置控制台日志级别
+    
+    Args:
+        level: 控制台日志级别
+    """
+    get_logger_manager().set_console_level(level)
+
+
+def set_file_log_level(level: str):
+    """设置文件日志级别
+    
+    Args:
+        level: 文件日志级别
+    """
+    get_logger_manager().set_file_level(level)
 
 
 class PerformanceTimer:

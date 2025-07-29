@@ -136,7 +136,15 @@ class AsyncAnalysisManager:
             
             # 启动任务处理器
             self.is_running = True
-            asyncio.create_task(self._task_processor())
+            try:
+                asyncio.create_task(self._task_processor())
+            except RuntimeError as e:
+                if "cannot schedule new futures after shutdown" in str(e):
+                    logger.warning("事件循环已关闭，无法启动任务处理器")
+                    self.is_running = False
+                    return False
+                else:
+                    raise
             
             # 添加默认结果输出回调
             self.add_result_callback(self._default_result_callback)
@@ -155,16 +163,47 @@ class AsyncAnalysisManager:
     async def stop(self) -> None:
         """停止异步分析管理器"""
         try:
+            logger.info("正在停止异步分析管理器...")
+            
+            # 停止接收新任务
             self.is_running = False
             self.auto_analysis_enabled = False
             
+            # 清空任务队列，避免新任务被处理
+            queue_size = self.task_queue.qsize()
+            if queue_size > 0:
+                logger.info(f"清空任务队列中的 {queue_size} 个待处理任务")
+                while not self.task_queue.empty():
+                    try:
+                        self.task_queue.get_nowait()
+                    except asyncio.QueueEmpty:
+                        break
+            
+            # 等待活动任务完成（最多等待30秒）
+            wait_start = time.time()
+            while self.active_tasks and (time.time() - wait_start) < 30:
+                logger.info(f"等待 {len(self.active_tasks)} 个活动任务完成...")
+                await asyncio.sleep(1.0)
+            
+            # 如果还有活动任务，强制清理
+            if self.active_tasks:
+                logger.warning(f"强制清理 {len(self.active_tasks)} 个未完成的任务")
+                self.active_tasks.clear()
+            
             # 停止VLM服务
             if self.vlm_service:
-                await self.vlm_service.stop()
+                try:
+                    await self.vlm_service.stop()
+                except Exception as e:
+                    logger.warning(f"停止VLM服务时出错: {e}")
             
             # 关闭线程池
             if self.thread_pool:
-                self.thread_pool.shutdown(wait=True)
+                try:
+                    self.thread_pool.shutdown(wait=True)  # 等待线程池中的任务完成
+                    logger.info("线程池已安全关闭")
+                except Exception as e:
+                    logger.warning(f"关闭线程池时出错: {e}")
             
             logger.info("异步分析管理器已停止")
             
@@ -182,8 +221,15 @@ class AsyncAnalysisManager:
         self.auto_analysis_enabled = True
         
         # 启动自动分析任务
-        asyncio.create_task(self._auto_analysis_loop())
-        logger.info(f"自动截图分析已启动，间隔: {interval}秒")
+        try:
+            asyncio.create_task(self._auto_analysis_loop())
+            logger.info(f"自动截图分析已启动，间隔: {interval}秒")
+        except RuntimeError as e:
+            if "cannot schedule new futures after shutdown" in str(e):
+                logger.warning("事件循环已关闭，无法启动自动分析")
+                self.auto_analysis_enabled = False
+            else:
+                raise
     
     async def stop_auto_analysis(self) -> None:
         """停止自动截图分析"""
@@ -278,28 +324,54 @@ class AsyncAnalysisManager:
             bool: 优化是否成功
         """
         try:
-            if len(self.analysis_history) < 5:
-                logger.warning("历史数据不足，无法进行提示词优化")
+            # 检查提示词管理器的使用统计
+            from ..utils.prompt_manager import get_prompt_manager
+            prompt_manager = get_prompt_manager()
+            stats = prompt_manager.get_prompt_stats()
+            
+            # 检查是否有足够的提示词使用数据
+            has_sufficient_data = False
+            for category, category_stats in stats['categories'].items():
+                if category_stats['total_usage'] >= 3:  # 使用配置中的阈值
+                    has_sufficient_data = True
+                    break
+            
+            if not has_sufficient_data:
+                logger.warning("提示词使用数据不足，无法进行优化。请先使用游戏助手功能积累数据。")
                 return False
             
-            # 准备历史数据
-            history_data = []
-            for record in self.analysis_history[-20:]:  # 使用最近20条记录
-                history_data.append({
-                    "timestamp": record.timestamp,
-                    "scene": record.vlm_result.description,
-                    "accuracy": record.accuracy_score or 0.8,
-                    "elements_count": len(record.vlm_result.elements),
-                    "suggestions_count": len(record.vlm_result.suggestions)
-                })
+            # 基于提示词统计数据进行优化
+            optimization_performed = False
             
-            # 调用VLM服务进行提示词优化
-            optimized_prompt = await self.vlm_service.generate_optimized_prompt(
-                history_data, user_feedback
-            )
+            for category, category_stats in stats['categories'].items():
+                if category_stats['total_usage'] >= 3:
+                    success_rate = category_stats['avg_success_rate']
+                    response_time = category_stats['avg_response_time']
+                    
+                    # 检查是否需要优化
+                    needs_optimization = False
+                    optimization_reason = ""
+                    
+                    if success_rate < 0.7:
+                        needs_optimization = True
+                        optimization_reason = f"成功率较低 ({success_rate:.1%})"
+                    elif response_time > 8.0:
+                        needs_optimization = True
+                        optimization_reason = f"响应时间较长 ({response_time:.1f}s)"
+                    
+                    if needs_optimization:
+                        logger.info(f"正在优化提示词 {category}: {optimization_reason}")
+                        
+                        # 触发提示词管理器的优化（避免死锁）
+                        try:
+                            prompt_manager._optimize_prompts()
+                            optimization_performed = True
+                        except Exception as e:
+                            logger.error(f"提示词优化失败: {e}")
             
-            # 更新提示词模板
-            self.vlm_service.prompt_templates["game_analysis"] = optimized_prompt
+            if not optimization_performed:
+                logger.info("当前提示词性能良好，无需优化")
+                return True
             
             # 更新统计
             self.stats["prompt_optimizations"] += 1
@@ -365,7 +437,14 @@ class AsyncAnalysisManager:
                     continue
                 
                 # 启动任务处理
-                asyncio.create_task(self._process_task(task))
+                try:
+                    asyncio.create_task(self._process_task(task))
+                except RuntimeError as e:
+                    if "cannot schedule new futures after shutdown" in str(e):
+                        logger.warning("事件循环已关闭，停止创建新任务")
+                        break
+                    else:
+                        raise
                 
             except Exception as e:
                 logger.error(f"任务处理器错误: {e}")
@@ -377,10 +456,20 @@ class AsyncAnalysisManager:
         self.active_tasks[task.task_id] = task
         
         try:
+            # 检查服务是否正在运行
+            if not self.is_running:
+                logger.warning(f"服务已停止，跳过任务: {task.task_id}")
+                return
+            
             logger.info(f"开始处理分析任务: {task.task_id}")
             
             # 保存截图
             screenshot_path = await self._save_task_screenshot(task)
+            
+            # 检查VLM服务是否可用
+            if not self.vlm_service or not self.vlm_service.is_available:
+                logger.warning(f"VLM服务不可用，跳过分析任务: {task.task_id}")
+                return
             
             # 执行VLM分析
             vlm_result = await self.vlm_service.analyze_screenshot_async(
@@ -435,7 +524,10 @@ class AsyncAnalysisManager:
                 elements=[],
                 suggestions=[],
                 confidence=0.0,
-                model_name=self.vlm_service.model if self.vlm_service else "unknown"
+                model_name=self.vlm_service.model if self.vlm_service else "unknown",
+                processing_time=time.time() - start_time if 'start_time' in locals() else 0.0,
+                screen_type="unknown",
+                error_message=str(e)
             )
             
             self.completed_tasks[task.task_id] = failed_result
@@ -479,11 +571,27 @@ class AsyncAnalysisManager:
     async def _save_task_screenshot(self, task: AnalysisTask) -> str:
         """保存任务截图"""
         try:
-            timestamp_str = format_timestamp(task.timestamp)
-            filename = f"analysis_{task.task_id}_{timestamp_str}.png"
+            # 检查是否启用分析截图保存
+            if not self.config.config.save_analysis_screenshots:
+                logger.debug("分析截图保存已禁用，跳过保存")
+                return ""
+            
+            # 检查线程池是否可用
+            if not self.thread_pool or self.thread_pool._shutdown:
+                logger.warning("线程池不可用，跳过截图保存")
+                return ""
+            
+            # 使用统一的文件名格式，避免重复
+            timestamp = int(task.timestamp)
+            filename = f"analysis_screenshot_{timestamp}.png"
             
             screenshot_dir = self.config.get_screenshot_dir()
             screenshot_path = screenshot_dir / filename
+            
+            # 检查文件是否已存在，避免重复保存
+            if screenshot_path.exists():
+                logger.debug(f"截图文件已存在，跳过保存: {filename}")
+                return str(screenshot_path)
             
             # 在线程池中保存截图
             loop = asyncio.get_event_loop()
@@ -494,8 +602,16 @@ class AsyncAnalysisManager:
                 str(screenshot_path)
             )
             
+            logger.debug(f"分析截图已保存: {filename}")
             return str(screenshot_path)
             
+        except RuntimeError as e:
+            if "cannot schedule new futures after shutdown" in str(e):
+                logger.warning("线程池已关闭，跳过截图保存")
+                return ""
+            else:
+                logger.error(f"保存截图失败: {e}")
+                return ""
         except Exception as e:
             logger.error(f"保存截图失败: {e}")
             return ""
@@ -544,20 +660,55 @@ class AsyncAnalysisManager:
             if result.success:
                 print(f"✅ 分析成功 (置信度: {result.confidence:.2f})")
                 print(f"🎮 模型: {result.model_name}")
+                
+                # 显示使用的提示词
+                if result.used_prompt:
+                    print(f"🔤 使用的提示词:")
+                    # 截取提示词的前200个字符以避免输出过长
+                    prompt_preview = result.used_prompt[:200] + "..." if len(result.used_prompt) > 200 else result.used_prompt
+                    print(f"   {prompt_preview}")
+                    print()
+                
                 print(f"📝 描述: {result.description}")
                 
                 if result.elements:
                     print(f"\n🎯 发现元素 ({len(result.elements)}个):")
                     for i, element in enumerate(result.elements[:5], 1):  # 只显示前5个
-                        print(f"  {i}. {element.name} - {element.element_type.value} "
-                              f"({element.position[0]}, {element.position[1]}) "
-                              f"置信度: {element.confidence:.2f}")
+                        # 安全地获取元素属性，支持字典和对象两种格式
+                        if hasattr(element, 'name'):
+                            name = element.name
+                            element_type = element.element_type.value if hasattr(element.element_type, 'value') else str(element.element_type)
+                            position = element.position
+                            confidence = element.confidence
+                        else:
+                            # 处理字典格式的元素
+                            name = element.get('name', '未知元素')
+                            element_type = element.get('element_type', '未知类型')
+                            position = element.get('position', [0, 0])
+                            confidence = element.get('confidence', 0.0)
+                        
+                        print(f"  {i}. {name} - {element_type} "
+                              f"({position[0]}, {position[1]}) "
+                              f"置信度: {confidence:.2f}")
                 
                 if result.suggestions:
                     print(f"\n💡 操作建议 ({len(result.suggestions)}个):")
                     for i, suggestion in enumerate(result.suggestions[:3], 1):  # 只显示前3个
-                        print(f"  {i}. {suggestion.action_type.value}: {suggestion.description} "
-                              f"(优先级: {suggestion.priority}, 置信度: {suggestion.confidence:.2f})")
+                        # 安全地获取建议属性，支持字典和对象两种格式
+                        if hasattr(suggestion, 'action_type'):
+                            action_type = suggestion.action_type.value if hasattr(suggestion.action_type, 'value') else str(suggestion.action_type)
+                            description = suggestion.description
+                            priority = suggestion.priority
+                            confidence = suggestion.confidence
+                        else:
+                            # 处理字典格式的建议
+                            action_type = suggestion.get('action_type', '未知动作')
+                            description = suggestion.get('description', '无描述')
+                            priority = suggestion.get('priority', 1)
+                            confidence = suggestion.get('confidence', 0.0)
+                        
+                        print(f"  {i}. {action_type}: {description} "
+                              f"(优先级: {priority}, 置信度: {confidence:.2f})")
             else:
                 print(f"❌ 分析失败: {result.description}")
             
@@ -570,22 +721,14 @@ class AsyncAnalysisManager:
         """关闭分析管理器"""
         logger.info("正在关闭异步分析管理器...")
         
-        # 停止自动分析
-        self.auto_analysis_enabled = False
-        
-        # 停止任务处理器
-        self.is_running = False
-        
-        # 等待活动任务完成
-        while self.active_tasks:
-            logger.info(f"等待 {len(self.active_tasks)} 个活动任务完成...")
-            await asyncio.sleep(1.0)
+        # 调用stop方法进行清理
+        await self.stop()
         
         # 关闭VLM服务
         if self.vlm_service:
-            await self.vlm_service.close()
-        
-        # 关闭线程池
-        self.thread_pool.shutdown(wait=True)
+            try:
+                await self.vlm_service.close()
+            except Exception as e:
+                logger.warning(f"关闭VLM服务时出错: {e}")
         
         logger.info("异步分析管理器已关闭")

@@ -20,6 +20,7 @@ from ..services.vision import VisionService
 from ..services.automation import AutomationBackend
 from ..services.ollama_vlm import OllamaVLMService
 from ..services.async_analysis_manager import AsyncAnalysisManager
+from ..services.template_matcher import TemplateMatcher
 from ..utils.config import get_config, get_config_manager
 from ..utils.screenshot import ScreenshotManager
 
@@ -42,6 +43,7 @@ class GameAssistant:
         self.ollama_service = None
         self.async_manager = None
         self.screenshot_manager = None
+        self.template_matcher = None
         
         # 添加ollama_vlm属性引用
         self.ollama_vlm = None
@@ -70,21 +72,12 @@ class GameAssistant:
                     image_max_size=ollama_config.image_max_size,
                     image_quality=ollama_config.image_quality
                 )
+                # 异步初始化VLM服务
+                asyncio.create_task(self._initialize_vlm_service())
                 self.vision_service.enable_vlm(self.ollama_service)
                 logger.info(f"Ollama VLM服务已启用，模型: {ollama_config.model}")
             
-            # 初始化异步分析管理器
-            if self.config.async_analysis.enabled:
-                from ..services.connection import ConnectionService
-                connection_service = ConnectionService()
-                self.async_manager = AsyncAnalysisManager(
-                    config_manager=self.config_manager,
-                    connection_service=connection_service
-                )
-                logger.info("异步分析管理器已启用")
-            
-            # 初始化截图管理器
-            # 创建连接服务用于截图
+            # 初始化连接服务（所有服务共享同一个实例）
             from ..services.connection import ConnectionService
             self.connection_service = ConnectionService()
             # 尝试连接设备
@@ -96,12 +89,40 @@ class GameAssistant:
             except Exception as e:
                 logger.warning(f"设备连接异常: {e}，截图功能可能不可用")
             
+            # 初始化截图管理器
             self.screenshot_manager = ScreenshotManager(self.connection_service)
             logger.info("截图管理器已初始化")
+            
+            # 初始化异步分析管理器
+            if self.config.async_analysis.enabled:
+                self.async_manager = AsyncAnalysisManager(
+                    config_manager=self.config_manager,
+                    connection_service=self.connection_service  # 使用同一个连接服务实例
+                )
+                logger.info("异步分析管理器已启用")
+            
+            # 初始化模板匹配器
+            if self.config.vision.template_matching.get("enabled", False):
+                self.template_matcher = TemplateMatcher(
+                    template_dir=self.config.vision.template_matching.get("template_dir", "templates")
+                )
+                logger.info("模板匹配器已启用")
             
         except Exception as e:
             logger.error(f"服务初始化失败: {e}")
             raise ConfigurationError(f"服务初始化失败: {e}")
+    
+    async def _initialize_vlm_service(self):
+        """异步初始化VLM服务"""
+        try:
+            if self.ollama_service:
+                success = await self.ollama_service.initialize()
+                if success:
+                    logger.info("VLM服务异步初始化成功")
+                else:
+                    logger.warning("VLM服务异步初始化失败，将使用模板匹配")
+        except Exception as e:
+            logger.warning(f"VLM服务异步初始化异常: {e}，将使用模板匹配")
     
     async def start(self):
         """启动游戏助手（别名方法）"""
@@ -230,15 +251,51 @@ class GameAssistant:
             
             # 使用VLM分析屏幕
             if self.config.vision.vlm_enabled:
-                result = await self.vision_service.analyze_screen(screenshot, use_vlm=True)
-                
-                # 如果启用了异步分析，提交到异步管理器
-                if self.async_manager:
-                    await self.async_manager.analyze_screenshot(
-                        screenshot=screenshot,
-                        analysis_type="screen_analysis",
-                        priority=1
-                    )
+                # 确保VLM服务已启动且可用
+                if (self.ollama_service and 
+                    hasattr(self.ollama_service, 'is_available') and 
+                    self.ollama_service.is_available):
+                    
+                    # 优先使用异步分析管理器（避免重复VLM调用）
+                    if self.async_manager:
+                        try:
+                            # 提交到异步管理器进行VLM分析
+                            task_id = await self.async_manager.analyze_screenshot(
+                                screenshot=screenshot,
+                                analysis_type="screen_analysis",
+                                priority=1
+                            )
+                            
+                            # 等待分析结果
+                            vlm_result = await self.async_manager.get_analysis_result(task_id, timeout=30.0)
+                            
+                            if vlm_result and vlm_result.success:
+                                # 将VLM结果转换为AnalysisResult格式
+                                result = AnalysisResult(
+                                    success=True,
+                                    confidence=vlm_result.confidence,
+                                    elements=vlm_result.elements,
+                                    suggestions=vlm_result.suggestions,
+                                    analysis_time=0.0,
+                                    raw_data={
+                                        "screen_type": vlm_result.screen_type,
+                                        "method": "vlm_async",
+                                        "task_id": task_id
+                                    }
+                                )
+                            else:
+                                logger.warning("异步VLM分析失败，回退到模板匹配")
+                                result = await self.vision_service.analyze_screen(screenshot, use_vlm=False)
+                                
+                        except Exception as e:
+                            logger.warning(f"异步分析失败: {e}，回退到直接VLM分析")
+                            result = await self.vision_service.analyze_screen(screenshot, use_vlm=True)
+                    else:
+                        # 没有异步管理器时直接使用VisionService
+                        result = await self.vision_service.analyze_screen(screenshot, use_vlm=True)
+                else:
+                    logger.warning("VLM服务不可用，使用模板匹配分析")
+                    result = await self.vision_service.analyze_screen(screenshot, use_vlm=False)
                 
                 self.analysis_count += 1
                 self.last_analysis_time = time.time()

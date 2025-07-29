@@ -240,14 +240,28 @@ class ConnectionService:
     仅支持pymobiledevice3 + tunneld的USB连接方式。
     """
     
-    def __init__(self, auto_start_tunneld: bool = True):
+    def __init__(self, auto_start_tunneld: bool = True, config: Optional[dict] = None):
         """初始化连接服务
         
         Args:
             auto_start_tunneld: 是否自动启动tunneld服务
+            config: 配置字典
         """
         if not PYMOBILEDEVICE3_AVAILABLE:
             raise ConnectionError("pymobiledevice3 未安装，无法使用连接服务")
+        
+        # 配置相关
+        self.config = config or {}
+        device_config = self.config.get('device', {})
+        screenshot_config = device_config.get('screenshot', {})
+        
+        # 截图配置
+        self.screenshot_timeout = screenshot_config.get('timeout', 15)
+        self.screenshot_max_retries = screenshot_config.get('max_retries', 3)
+        self.screenshot_retry_interval = screenshot_config.get('retry_interval', 2)
+        self.external_timeout = screenshot_config.get('external_timeout', 10)
+        self.quality_check = screenshot_config.get('quality_check', True)
+        self.min_file_size = screenshot_config.get('min_file_size', 1024)
         
         self.auto_start_tunneld = auto_start_tunneld
         self.tunneld_manager = TunneldManager()
@@ -362,14 +376,15 @@ class ConnectionService:
                     screenshot_service_created = True
                     logger.info("将使用外部命令进行截图")
                     
-                    # 测试外部截图命令
+                    # 测试外部截图命令（使用更短的超时时间）
                     try:
-                        test_screenshot = self._take_external_screenshot()
+                        logger.info("正在测试外部截图命令...")
+                        test_screenshot = self._take_external_screenshot_with_timeout(5)  # 使用5秒超时
                         if test_screenshot is not None:
                             screen_height, screen_width = test_screenshot.shape[:2]
                             logger.info(f"屏幕尺寸: {screen_width}x{screen_height}")
                         else:
-                            logger.warning("外部截图测试失败")
+                            logger.warning("外部截图测试失败，可能设备未连接或权限不足")
                             raise ConnectionError(f"所有截图方法都不可用。标准服务错误: {e}")
                     except Exception as ext_e:
                         logger.error(f"外部截图命令也失败: {ext_e}")
@@ -535,42 +550,79 @@ class ConnectionService:
          Returns:
              Optional[np.ndarray]: 截图数据，BGR格式
          """
-         try:
-             # 创建临时文件
-             with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as temp_file:
-                 temp_path = temp_file.name
+         return self._take_external_screenshot_with_timeout(10)
+    
+    def _take_external_screenshot_with_timeout(self, timeout_seconds: Optional[int] = None) -> Optional[np.ndarray]:
+         """使用外部命令执行截图操作，支持自定义超时时间和重试机制
+         
+         Args:
+             timeout_seconds: 超时时间（秒），如果为None则使用配置值
              
+         Returns:
+             Optional[np.ndarray]: 截图数据，BGR格式
+         """
+         if timeout_seconds is None:
+             timeout_seconds = self.external_timeout
+             
+         max_retries = self.screenshot_max_retries
+         retry_delay = self.screenshot_retry_interval
+         
+         for attempt in range(max_retries):
              try:
-                 # 使用 pymobiledevice3 命令行工具截图
-                 cmd = [sys.executable, "-m", "pymobiledevice3", "developer", "dvt", "screenshot", temp_path]
+                 # 创建临时文件
+                 with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as temp_file:
+                     temp_path = temp_file.name
                  
-                 result = subprocess.run(
-                     cmd,
-                     capture_output=True,
-                     timeout=60,  # 增加超时时间到60秒
-                     text=True
-                 )
-                 
-                 if result.returncode == 0 and os.path.exists(temp_path):
-                     # 读取截图文件
-                     with open(temp_path, 'rb') as f:
-                         screenshot_data = f.read()
-                     return self._process_screenshot_data(screenshot_data)
-                 else:
-                     logger.error(f"外部截图命令失败: {result.stderr if result.stderr else '未知错误'}")
-                     return None
+                 try:
+                     # 使用 pymobiledevice3 命令行工具截图
+                     cmd = [sys.executable, "-m", "pymobiledevice3", "developer", "dvt", "screenshot", temp_path]
                      
-             finally:
-                 # 清理临时文件
-                 if os.path.exists(temp_path):
-                     os.unlink(temp_path)
+                     logger.debug(f"执行外部截图命令 (尝试 {attempt + 1}/{max_retries})，超时: {timeout_seconds}秒")
+                     
+                     result = subprocess.run(
+                         cmd,
+                         capture_output=True,
+                         timeout=timeout_seconds,
+                         text=True
+                     )
+                     
+                     if result.returncode == 0 and os.path.exists(temp_path):
+                         # 检查文件大小
+                         file_size = os.path.getsize(temp_path)
+                         
+                         # 检查文件大小是否符合要求
+                         if self.quality_check and file_size < self.min_file_size:
+                             logger.warning(f"截图文件过小: {file_size} 字节 (最小要求: {self.min_file_size} 字节) (尝试 {attempt + 1}/{max_retries})")
+                         elif file_size > 0:
+                             # 读取截图文件
+                             with open(temp_path, 'rb') as f:
+                                 screenshot_data = f.read()
+                             logger.debug(f"外部截图成功，文件大小: {file_size} 字节")
+                             return self._process_screenshot_data(screenshot_data)
+                         else:
+                             logger.warning(f"外部截图文件为空 (尝试 {attempt + 1}/{max_retries})")
+                     else:
+                         error_msg = result.stderr.strip() if result.stderr else '未知错误'
+                         logger.warning(f"外部截图命令失败 (尝试 {attempt + 1}/{max_retries}): {error_msg}")
+                         
+                 finally:
+                     # 清理临时文件
+                     if os.path.exists(temp_path):
+                         os.unlink(temp_path)
                  
-         except subprocess.TimeoutExpired:
-             logger.error("外部截图命令超时")
-             return None
-         except Exception as e:
-             logger.error(f"外部截图命令异常: {e}")
-             return None
+             except subprocess.TimeoutExpired:
+                 logger.warning(f"外部截图命令超时 (尝试 {attempt + 1}/{max_retries})，超时时间: {timeout_seconds}秒")
+             except Exception as e:
+                 logger.warning(f"外部截图命令异常 (尝试 {attempt + 1}/{max_retries}): {e}")
+             
+             # 如果不是最后一次尝试，等待后重试
+             if attempt < max_retries - 1:
+                 logger.debug(f"等待 {retry_delay} 秒后重试...")
+                 time.sleep(retry_delay)
+                 retry_delay *= 1.5  # 指数退避
+         
+         logger.error(f"外部截图命令在 {max_retries} 次尝试后仍然失败")
+         return None
     
     def _process_screenshot_data(self, screenshot_data: bytes) -> Optional[np.ndarray]:
         """处理截图数据，转换为 numpy 数组

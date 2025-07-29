@@ -1,0 +1,97 @@
+{
+  "name": "战斗界面模板",
+  "description": "用于识别游戏战斗界面元素的模板",
+  "version": "1.0",
+  "elements": [
+    {
+      "type": "button",
+      "name": "攻击按钮",
+      "keywords": ["攻击", "attack", "战斗", "fight", "打击"],
+      "position_hints": {
+        "bottom_area": true,
+        "right_side": true
+      },
+      "confidence_threshold": 0.8
+    },
+    {
+      "type": "button",
+      "name": "技能按钮",
+      "keywords": ["技能", "skill", "魔法", "magic", "特技"],
+      "position_hints": {
+        "bottom_area": true,
+        "center": true
+      },
+      "confidence_threshold": 0.7
+    },
+    {
+      "type": "button",
+      "name": "防御按钮",
+      "keywords": ["防御", "defend", "格挡", "block"],
+      "position_hints": {
+        "bottom_area": true,
+        "left_side": true
+      },
+      "confidence_threshold": 0.7
+    },
+    {
+      "type": "text",
+      "name": "生命值",
+      "keywords": ["HP", "生命", "血量", "health"],
+      "position_hints": {
+        "top_area": true,
+        "left_side": true
+      },
+      "confidence_threshold": 0.9
+    },
+    {
+      "type": "text",
+      "name": "魔法值",
+      "keywords": ["MP", "魔法", "法力", "mana"],
+      "position_hints": {
+        "top_area": true,
+        "left_side": true
+      },
+      "confidence_threshold": 0.8
+    },
+    {
+      "type": "button",
+      "name": "逃跑按钮",
+      "keywords": ["逃跑", "flee", "退出", "escape"],
+      "position_hints": {
+        "corner": true,
+        "top_right": true
+      },
+      "confidence_threshold": 0.6
+    }
+  ],
+  "actions": [
+    {
+      "name": "普通攻击",
+      "description": "使用普通攻击对敌人造成伤害",
+      "target_element": "攻击按钮",
+      "action_type": "tap",
+      "priority": 3
+    },
+    {
+      "name": "释放技能",
+      "description": "使用技能攻击敌人",
+      "target_element": "技能按钮",
+      "action_type": "tap",
+      "priority": 2
+    },
+    {
+      "name": "防御姿态",
+      "description": "进入防御状态减少伤害",
+      "target_element": "防御按钮",
+      "action_type": "tap",
+      "priority": 1
+    },
+    {
+      "name": "战斗逃跑",
+      "description": "从战斗中逃跑",
+      "target_element": "逃跑按钮",
+      "action_type": "tap",
+      "priority": 1
+    }
+  ]
+}

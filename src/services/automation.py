@@ -18,6 +18,7 @@ from ..models import (
     Action, ActionType, ActionSuggestion, ExecutionResult, ExecutionMode,
     Element, DeviceInfo, ActionError, WebDriverError
 )
+from ..utils.prompt_manager import get_prompt_manager
 
 
 class AutomationBackend(ABC):
@@ -415,22 +416,66 @@ class AutomationService:
     
     def _generate_suggestion(self, action: Action) -> ActionSuggestion:
         """生成操作建议"""
-        descriptions = {
-            ActionType.TAP: f"点击坐标 ({action.position[0]}, {action.position[1]})" if action.position else "点击操作",
-            ActionType.SWIPE: f"从 ({action.position[0]}, {action.position[1]}) 滑动到 ({action.parameters.get('target_position', (0, 0))[0]}, {action.parameters.get('target_position', (0, 0))[1]})" if action.position and action.parameters.get('target_position') else "滑动操作",
-            ActionType.LONG_PRESS: f"长按坐标 ({action.position[0]}, {action.position[1]}) {action.parameters.get('duration', 2.0)}秒" if action.position else f"长按操作 {action.parameters.get('duration', 2.0)}秒",
-            ActionType.HOME: "按下Home键",
-            ActionType.WAIT: f"等待 {action.parameters.get('duration', 1.0)} 秒"
-        }
+        prompt_manager = get_prompt_manager()
         
-        description = descriptions.get(action.action_type, f"执行 {action.action_type.value} 操作")
+        # 从配置文件获取操作描述模板
+        if action.action_type == ActionType.TAP:
+            if action.position:
+                template = prompt_manager.get_prompt("automation_actions.tap", "zh")
+                description = template.format(x=action.position[0], y=action.position[1])
+            else:
+                description = prompt_manager.get_prompt("automation_actions.tap", "zh").split(" (")[0]  # 只取"点击"部分
+        elif action.action_type == ActionType.SWIPE:
+            if action.position and action.parameters.get('target_position'):
+                template = prompt_manager.get_prompt("automation_actions.swipe", "zh")
+                target_pos = action.parameters.get('target_position', (0, 0))
+                description = template.format(
+                    start_x=action.position[0], start_y=action.position[1],
+                    end_x=target_pos[0], end_y=target_pos[1]
+                )
+            else:
+                description = prompt_manager.get_prompt("automation_actions.swipe", "zh").split(" (")[0]  # 只取"滑动"部分
+        elif action.action_type == ActionType.LONG_PRESS:
+            template = prompt_manager.get_prompt("automation_actions.long_press", "zh")
+            duration = action.parameters.get('duration', 2.0)
+            if action.position:
+                description = template.format(x=action.position[0], y=action.position[1], duration=duration)
+            else:
+                description = f"长按操作 {duration}秒"
+        elif action.action_type == ActionType.HOME:
+            description = prompt_manager.get_prompt("automation_actions.home", "zh")
+        elif action.action_type == ActionType.WAIT:
+            template = prompt_manager.get_prompt("automation_actions.wait", "zh")
+            duration = action.parameters.get('duration', 1.0)
+            description = template.format(duration=duration)
+        else:
+            description = f"执行 {action.action_type.value} 操作"
+        
+        # 创建一个默认的目标元素
+        if action.target:
+            target_element = action.target
+        elif action.position:
+            target_element = Element(
+                name="action_target",
+                position=action.position,
+                size=(50, 50),
+                confidence=1.0
+            )
+        else:
+            target_element = Element(
+                name="default_target",
+                position=(400, 600),
+                size=(50, 50),
+                confidence=0.5
+            )
         
         return ActionSuggestion(
             action_type=action.action_type,
+            target=target_element,
+            parameters=action.parameters or {},
+            priority=1,
             description=description,
-            coordinates=action.position if action.position else None,
-            confidence=1.0,
-            reason=action.description or "用户指定操作"
+            confidence=1.0
         )
     
     def _update_average_execution_time(self, execution_time: float) -> None:
@@ -498,10 +543,12 @@ class AutomationService:
         Returns:
             Action: 点击操作对象
         """
+        prompt_manager = get_prompt_manager()
+        default_desc = prompt_manager.get_prompt("automation_actions.tap").format(x=x, y=y)
         return Action(
             action_type=ActionType.TAP,
             position=(x, y),
-            description=description or f"点击 ({x}, {y})"
+            description=description or default_desc
         )
     
     def create_swipe_action(self, start_x: int, start_y: int, end_x: int, end_y: int,
@@ -517,11 +564,15 @@ class AutomationService:
         Returns:
             Action: 滑动操作对象
         """
+        prompt_manager = get_prompt_manager()
+        default_desc = prompt_manager.get_prompt("automation_actions.swipe").format(
+            start_x=start_x, start_y=start_y, end_x=end_x, end_y=end_y
+        )
         return Action(
             action_type=ActionType.SWIPE,
             position=(start_x, start_y),
             parameters={"target_position": (end_x, end_y), "duration": duration},
-            description=description or f"滑动 ({start_x}, {start_y}) -> ({end_x}, {end_y})"
+            description=description or default_desc
         )
     
     def create_long_press_action(self, x: int, y: int, duration: float = 2.0,
@@ -536,11 +587,15 @@ class AutomationService:
         Returns:
             Action: 长按操作对象
         """
+        prompt_manager = get_prompt_manager()
+        default_desc = prompt_manager.get_prompt("automation_actions.long_press").format(
+            x=x, y=y, duration=duration
+        )
         return Action(
             action_type=ActionType.LONG_PRESS,
             position=(x, y),
             parameters={"duration": duration},
-            description=description or f"长按 ({x}, {y}) {duration}秒"
+            description=description or default_desc
         )
     
     def create_home_action(self, description: str = "") -> Action:
@@ -552,9 +607,11 @@ class AutomationService:
         Returns:
             Action: Home键操作对象
         """
+        prompt_manager = get_prompt_manager()
+        default_desc = prompt_manager.get_prompt("automation_actions.home")
         return Action(
             action_type=ActionType.HOME,
-            description=description or "按下Home键"
+            description=description or default_desc
         )
     
     def create_wait_action(self, duration: float, description: str = "") -> Action:
@@ -567,10 +624,12 @@ class AutomationService:
         Returns:
             Action: 等待操作对象
         """
+        prompt_manager = get_prompt_manager()
+        default_desc = prompt_manager.get_prompt("automation_actions.wait").format(duration=duration)
         return Action(
             action_type=ActionType.WAIT,
             parameters={"duration": duration},
-            description=description or f"等待 {duration} 秒"
+            description=description or default_desc
         )
 
 

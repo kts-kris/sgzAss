@@ -1,0 +1,106 @@
+{
+  "name": "菜单界面模板",
+  "description": "用于识别游戏菜单界面元素的模板",
+  "version": "1.0",
+  "elements": [
+    {
+      "type": "menu_item",
+      "name": "新游戏",
+      "keywords": ["新游戏", "new game", "开始", "start"],
+      "position_hints": {
+        "center": true,
+        "vertical_list": true,
+        "top_item": true
+      },
+      "confidence_threshold": 0.8
+    },
+    {
+      "type": "menu_item",
+      "name": "继续游戏",
+      "keywords": ["继续", "continue", "载入", "load"],
+      "position_hints": {
+        "center": true,
+        "vertical_list": true
+      },
+      "confidence_threshold": 0.8
+    },
+    {
+      "type": "menu_item",
+      "name": "设置选项",
+      "keywords": ["设置", "settings", "选项", "options", "配置"],
+      "position_hints": {
+        "center": true,
+        "vertical_list": true
+      },
+      "confidence_threshold": 0.7
+    },
+    {
+      "type": "menu_item",
+      "name": "退出游戏",
+      "keywords": ["退出", "exit", "quit", "关闭"],
+      "position_hints": {
+        "center": true,
+        "vertical_list": true,
+        "bottom_item": true
+      },
+      "confidence_threshold": 0.8
+    },
+    {
+      "type": "button",
+      "name": "确认按钮",
+      "keywords": ["确认", "确定", "OK", "confirm", "yes"],
+      "position_hints": {
+        "bottom_area": true,
+        "right_side": true
+      },
+      "confidence_threshold": 0.9
+    },
+    {
+      "type": "button",
+      "name": "取消按钮",
+      "keywords": ["取消", "cancel", "no", "back"],
+      "position_hints": {
+        "bottom_area": true,
+        "left_side": true
+      },
+      "confidence_threshold": 0.9
+    }
+  ],
+  "actions": [
+    {
+      "name": "开始新游戏",
+      "description": "点击新游戏开始全新的游戏体验",
+      "target_element": "新游戏",
+      "action_type": "tap",
+      "priority": 3
+    },
+    {
+      "name": "继续之前的游戏",
+      "description": "载入之前保存的游戏进度",
+      "target_element": "继续游戏",
+      "action_type": "tap",
+      "priority": 3
+    },
+    {
+      "name": "打开设置",
+      "description": "进入游戏设置界面",
+      "target_element": "设置选项",
+      "action_type": "tap",
+      "priority": 2
+    },
+    {
+      "name": "确认操作",
+      "description": "确认当前选择的操作",
+      "target_element": "确认按钮",
+      "action_type": "tap",
+      "priority": 2
+    },
+    {
+      "name": "取消操作",
+      "description": "取消当前操作返回上一步",
+      "target_element": "取消按钮",
+      "action_type": "tap",
+      "priority": 1
+    }
+  ]
+}

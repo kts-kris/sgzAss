@@ -1,0 +1,9 @@
+{
+  "command": "6",
+  "error_type": "EOFError",
+  "error_message": "EOF when reading a line",
+  "traceback": "Traceback (most recent call last):\n  File \"/Users/liuweigang/sgzAss/src/cli/game_cli.py\", line 80, in start_interactive_mode\n    command = input(\"\\n🎯 请输入命令 (数字或名称): \").strip().lower()\nEOFError: EOF when reading a line\n",
+  "timestamp": "2025-07-29 11:25:05",
+  "component": "GameCLI",
+  "version": "3.0"
+}

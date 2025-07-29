@@ -13,33 +13,52 @@ connection:
   device_udid: ""
   # 连接模式（usb）
   connection_mode: "usb"
+  
+  # 截图服务配置
+  screenshot:
+    # 截图超时时间（秒）
+    timeout: 15
+    # 截图重试次数
+    max_retries: 3
+    # 重试间隔（秒）
+    retry_interval: 2
+    # 外部截图命令超时（秒）
+    external_timeout: 10
+    # 截图质量检查
+    quality_check: true
+    # 最小文件大小（字节）
+    min_file_size: 1024
 
 # 视觉识别配置
 vision:
-  # 模板匹配阈值
-  template_threshold: 0.8
-  # 模板目录路径
-  template_dir: "resources/templates"
-  # 是否启用VLM大模型识别
-  enable_vlm: true
-  # VLM服务提供商（openai/anthropic/google/ollama）
-  vlm_provider: "ollama"
+  # VLM配置
+  vlm:
+    enabled: true
+    provider: "ollama"  # 可选: ollama, openai, anthropic
+    
+  # Ollama配置
+  ollama_config:
+    base_url: "http://localhost:11434"
+    model: "qwen2.5vl:latest"
+    timeout: 60
+    max_retries: 3
+    image_max_size: [800, 600]
+    image_quality: 75
+    
+  # 模板匹配配置
+  template_matching:
+    enabled: true
+    template_dir: "resources/templates"
+    confidence_threshold: 0.6
+    fallback_enabled: true
+    fallback_threshold: 0.3
+    
   # VLM API配置
   vlm_config:
     api_key: ""
     model: "qwen2.5vl:latest"
     max_tokens: 1000
     temperature: 0.1
-  # Ollama VLM配置
-  ollama_config:
-    host: "localhost"
-    port: 11434
-    model: "qwen2.5vl:latest"
-    timeout: 60
-    max_retries: 3
-    # 图像压缩设置 - 优化后的配置，平衡性能和质量
-    image_max_size: [800, 600]  # 从1024x1024降低到800x600，提升性能
-    image_quality: 75            # 从85降低到75，减少文件大小
   # 非极大值抑制阈值
   nms_threshold: 0.3
   # 最大检测数量
@@ -134,8 +153,10 @@ async_analysis:
 
 # 日志配置
 logging:
-  # 日志级别（DEBUG/INFO/WARNING/ERROR/CRITICAL）
+  # 文件日志级别（DEBUG/INFO/WARNING/ERROR/CRITICAL）
   level: "DEBUG"
+  # 控制台日志级别（DEBUG/INFO/WARNING/ERROR/CRITICAL）
+  console_level: "INFO"
   # 日志格式
   format: "{time:YYYY-MM-DD HH:mm:ss} | {level} | {name}:{function}:{line} | {message}"
   # 文件输出路径
@@ -203,6 +224,19 @@ security:
     path: "logs/audit.log"
   # API密钥加密
   encrypt_api_keys: true
+
+# 提示词配置
+prompt:
+  # 提示词配置文件路径
+  config_file: "prompts.yaml"
+  # 是否启用提示词优化
+  enable_optimization: true
+  # 优化频率（使用次数阈值）
+  optimization_frequency: 3  # 降低到3次，更容易触发优化
+  # 是否缓存提示词
+  cache_prompts: true
+  # 是否回退到内置提示词
+  fallback_to_builtin: true
 
 # 开发配置
 development:

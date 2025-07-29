@@ -35,7 +35,7 @@ class OllamaConfig:
     """Ollama VLM配置"""
     host: str = "localhost"
     port: int = 11434
-    model: str = "llava:latest"
+    model: str = "qwen2.5vl:latest"
     timeout: float = 60.0
     max_retries: int = 3
     image_max_size: tuple = field(default_factory=lambda: (1024, 1024))
@@ -58,6 +58,15 @@ class VisionConfig:
     vlm_timeout: float = 30.0
     vlm_max_retries: int = 3
     ollama_config: OllamaConfig = field(default_factory=OllamaConfig)
+    
+    # 模板匹配配置
+    template_matching: Dict[str, Any] = field(default_factory=lambda: {
+        "enabled": True,
+        "template_dir": "templates",
+        "confidence_threshold": 0.7,
+        "fallback_enabled": True,
+        "fallback_threshold": 0.5
+    })
 
 
 @dataclass
@@ -110,7 +119,8 @@ class AsyncAnalysisConfig:
 @dataclass
 class LoggingConfig:
     """日志配置"""
-    level: str = "INFO"
+    level: str = "INFO"  # 文件日志等级
+    console_level: str = "INFO"  # 控制台日志等级
     format: str = "{time:YYYY-MM-DD HH:mm:ss} | {level} | {name}:{function}:{line} | {message}"
     file_path: Optional[str] = None
     max_file_size: str = "10 MB"
@@ -308,23 +318,39 @@ class ConfigManager:
     
     def _update_config_from_dict(self, data: Dict[str, Any]):
         """从字典更新配置"""
-        def update_nested(obj, updates):
+        # 定义SystemConfig中已知的顶级配置项
+        known_top_level_keys = {
+            'connection', 'vision', 'automation', 'async_analysis', 
+            'logging', 'screenshot', 'prompt', 'debug_mode', 
+            'performance_monitoring', 'auto_save_screenshots', 
+            'save_analysis_screenshots', 'screenshot_dir', 'data_dir', 'temp_dir'
+        }
+        
+        def update_nested(obj, updates, path=""):
             for key, value in updates.items():
+                current_path = f"{path}.{key}" if path else key
+                
                 if hasattr(obj, key):
                     current_value = getattr(obj, key)
                     if isinstance(current_value, (ConnectionConfig, VisionConfig, 
                                                 AutomationConfig, AsyncAnalysisConfig,
-                                                LoggingConfig, OllamaConfig, ContinuousModeConfig)):
+                                                LoggingConfig, OllamaConfig, ContinuousModeConfig,
+                                                ScreenshotConfig, PromptConfig)):
                         if isinstance(value, dict):
-                            update_nested(current_value, value)
+                            update_nested(current_value, value, current_path)
                         else:
-                            logger.warning(f"配置项 {key} 应该是字典类型")
+                            logger.warning(f"配置项 {current_path} 应该是字典类型")
                     else:
                         setattr(obj, key, value)
+                        logger.debug(f"更新配置项: {current_path} = {value}")
                 else:
-                    logger.warning(f"未知的配置项: {key}")
+                    # 只对顶级未知配置项发出警告，忽略嵌套的未知配置项
+                    if not path and key not in known_top_level_keys:
+                        logger.debug(f"跳过未知的顶级配置项: {key}")
         
-        update_nested(self.config, data)
+        # 只处理已知的顶级配置项
+        filtered_data = {k: v for k, v in data.items() if k in known_top_level_keys}
+        update_nested(self.config, filtered_data)
     
     def _set_nested_config(self, path: str, value: Any):
         """设置嵌套配置值"""

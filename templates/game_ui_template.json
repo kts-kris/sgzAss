@@ -1,0 +1,80 @@
+{
+  "name": "游戏界面通用模板",
+  "description": "用于识别常见游戏界面元素的模板",
+  "version": "1.0",
+  "elements": [
+    {
+      "type": "button",
+      "name": "开始按钮",
+      "keywords": ["开始", "start", "play", "begin"],
+      "position_hints": {
+        "center": true,
+        "bottom_area": true
+      },
+      "confidence_threshold": 0.7
+    },
+    {
+      "type": "button",
+      "name": "设置按钮",
+      "keywords": ["设置", "settings", "config", "选项"],
+      "position_hints": {
+        "corner": true,
+        "top_right": true
+      },
+      "confidence_threshold": 0.6
+    },
+    {
+      "type": "button",
+      "name": "返回按钮",
+      "keywords": ["返回", "back", "退出", "exit"],
+      "position_hints": {
+        "corner": true,
+        "top_left": true
+      },
+      "confidence_threshold": 0.8
+    },
+    {
+      "type": "text",
+      "name": "标题文本",
+      "keywords": ["游戏", "game", "title"],
+      "position_hints": {
+        "top_area": true,
+        "center_horizontal": true
+      },
+      "confidence_threshold": 0.5
+    },
+    {
+      "type": "menu",
+      "name": "主菜单",
+      "keywords": ["菜单", "menu", "选项", "options"],
+      "position_hints": {
+        "center": true,
+        "vertical_list": true
+      },
+      "confidence_threshold": 0.6
+    }
+  ],
+  "actions": [
+    {
+      "name": "点击开始",
+      "description": "点击开始按钮进入游戏",
+      "target_element": "开始按钮",
+      "action_type": "tap",
+      "priority": 3
+    },
+    {
+      "name": "进入设置",
+      "description": "点击设置按钮打开设置界面",
+      "target_element": "设置按钮",
+      "action_type": "tap",
+      "priority": 2
+    },
+    {
+      "name": "返回上级",
+      "description": "点击返回按钮回到上一界面",
+      "target_element": "返回按钮",
+      "action_type": "tap",
+      "priority": 2
+    }
+  ]
+}
